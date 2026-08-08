@@ -178,6 +178,7 @@
   <section id="libraryPanel" class="view">
     <div class="row top-toolbar">
       <input type="text" id="searchBox" placeholder="Search your songs..." style="max-width:280px;">
+      <span id="syncStatusLabel" style="font-size:11.5px;font-weight:600;"></span>
       <div class="spacer"></div>
       <button class="ghost small" id="exportLibraryBtn" title="Download all your songs and setlists as a backup file">⬇ Export backup</button>
       <label class="filelabel small" for="importLibraryInput" title="Restore songs and setlists from a backup file">⬆ Import backup</label>
@@ -317,7 +318,7 @@
     </div>
   </section>
 
-  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-20-t (camera diagnostics))</span></footer>
+  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-20-u (cross-device library sync))</span></footer>
 </div>
 <div id="customContextMenu" hidden></div>
 
@@ -649,6 +650,85 @@
       fbDb = firebase.database();
     }
   }catch(err){ console.error('Firebase init failed:', err); fbDb = null; }
+
+  // ================= Cross-device library sync =================
+  // The song/setlist library lives locally in IndexedDB (so it still works
+  // fully offline), and is mirrored to Firebase whenever something changes.
+  // A real-time listener pulls in changes made from *other* devices too, so
+  // adding a song or setlist on one screen shows up everywhere automatically
+  // — no export/import needed. There's no login system, so this library is
+  // shared by anyone who opens the site, same model as the Live feature.
+  let cloudSyncStarted = false;
+  let syncStatusEl = document.getElementById('syncStatusLabel');
+
+  function setSyncStatus(text, isLive){
+    if(!syncStatusEl) return;
+    syncStatusEl.textContent = text;
+    syncStatusEl.style.color = isLive ? 'var(--chord)' : 'var(--ink-soft)';
+  }
+
+  function syncSongToCloud(song){
+    if(!fbDb || !song || !song.id) return;
+    fbDb.ref('library/songs/' + song.id).set(song).catch((err) => console.warn('Cloud sync (song) failed — saved locally, will retry later:', err));
+  }
+  function deleteSongFromCloud(id){
+    if(!fbDb || !id) return;
+    fbDb.ref('library/songs/' + id).remove().catch((err) => console.warn('Cloud delete (song) failed:', err));
+  }
+  function syncSetlistToCloud(setlist){
+    if(!fbDb || !setlist || !setlist.id) return;
+    fbDb.ref('library/setlists/' + setlist.id).set(setlist).catch((err) => console.warn('Cloud sync (setlist) failed — saved locally, will retry later:', err));
+  }
+  function deleteSetlistFromCloud(id){
+    if(!fbDb || !id) return;
+    fbDb.ref('library/setlists/' + id).remove().catch((err) => console.warn('Cloud delete (setlist) failed:', err));
+  }
+
+  // Applying an incoming remote change writes to local storage ONLY (never
+  // calls syncSongToCloud/etc again) — otherwise each device would keep
+  // re-broadcasting the same change back and forth.
+  async function applyRemoteSong(song){
+    if(!song || !song.id) return;
+    const existing = await dbGet('songs', song.id);
+    if(!existing || (song.updatedAt || 0) >= (existing.updatedAt || 0)){
+      await dbPut('songs', song);
+      if(!document.getElementById('libraryPanel').hidden) loadLibrary();
+    }
+  }
+  async function applyRemoteSongRemoval(id){
+    await dbDelete('songs', id);
+    if(!document.getElementById('libraryPanel').hidden) loadLibrary();
+  }
+  async function applyRemoteSetlist(setlist){
+    if(!setlist || !setlist.id) return;
+    const existing = await dbGet('setlists', setlist.id);
+    if(!existing || (setlist.updatedAt || 0) >= (existing.updatedAt || 0)){
+      await dbPut('setlists', setlist);
+      if(!document.getElementById('libraryPanel').hidden) loadLibrary();
+    }
+  }
+  async function applyRemoteSetlistRemoval(id){
+    await dbDelete('setlists', id);
+    if(!document.getElementById('libraryPanel').hidden) loadLibrary();
+  }
+
+  function startCloudLibrarySync(){
+    if(!fbDb || cloudSyncStarted) return;
+    cloudSyncStarted = true;
+    setSyncStatus('☁ Connecting…', false);
+
+    fbDb.ref('.info/connected').on('value', (snap) => {
+      setSyncStatus(snap.val() === true ? '☁ Synced across devices' : '☁ Offline — changes saved locally', snap.val() === true);
+    });
+
+    fbDb.ref('library/songs').on('child_added', (snap) => applyRemoteSong(snap.val()));
+    fbDb.ref('library/songs').on('child_changed', (snap) => applyRemoteSong(snap.val()));
+    fbDb.ref('library/songs').on('child_removed', (snap) => applyRemoteSongRemoval(snap.key));
+
+    fbDb.ref('library/setlists').on('child_added', (snap) => applyRemoteSetlist(snap.val()));
+    fbDb.ref('library/setlists').on('child_changed', (snap) => applyRemoteSetlist(snap.val()));
+    fbDb.ref('library/setlists').on('child_removed', (snap) => applyRemoteSetlistRemoval(snap.key));
+  }
 
   let liveSessionCode = null;
   let lastBroadcastAt = 0;
@@ -1025,8 +1105,8 @@
       const backup = JSON.parse(text);
       const songs = Array.isArray(backup.songs) ? backup.songs : [];
       const setlists = Array.isArray(backup.setlists) ? backup.setlists : [];
-      for(const song of songs){ if(song && song.id) await dbPut('songs', song); }
-      for(const sl of setlists){ if(sl && sl.id) await dbPut('setlists', sl); }
+      for(const song of songs){ if(song && song.id){ await dbPut('songs', song); syncSongToCloud(song); } }
+      for(const sl of setlists){ if(sl && sl.id){ await dbPut('setlists', sl); syncSetlistToCloud(sl); } }
       statusEl.textContent = 'Imported ' + songs.length + ' song' + (songs.length===1?'':'s') + ' and ' + setlists.length + ' setlist' + (setlists.length===1?'':'s') + '. (Existing songs with the same ID were updated, not duplicated.)';
       await loadLibrary();
     }catch(err){
@@ -1085,6 +1165,7 @@
       editingSongId = record.id;
     }
     await dbPut('songs', record);
+    syncSongToCloud(record);
 
     if(editorReturnView === 'player'){
       currentSongId = record.id;
@@ -1112,6 +1193,7 @@
     if(!editingSongId) return;
     if(!confirm('Delete this song? This cannot be undone.')) return;
     await dbDelete('songs', editingSongId);
+    deleteSongFromCloud(editingSongId);
     showView('libraryPanel');
     await loadLibrary();
   });
@@ -1347,7 +1429,9 @@ Was blind but now I see`;
     const song = await dbGet('songs', currentSongId);
     if(song && song.transpose !== semitones){
       song.transpose = semitones;
+      song.updatedAt = Date.now();
       await dbPut('songs', song);
+      syncSongToCloud(song);
     }
   }
 
@@ -1598,6 +1682,7 @@ Was blind but now I see`;
       createdAt: now, updatedAt: now
     };
     await dbPut('setlists', record);
+    syncSetlistToCloud(record);
     showView('libraryPanel');
     await loadLibrary();
   });
@@ -1609,6 +1694,7 @@ Was blind but now I see`;
     if(!editingSetlistId) return;
     if(!confirm('Delete this setlist? Songs inside it are not deleted.')) return;
     await dbDelete('setlists', editingSetlistId);
+    deleteSetlistFromCloud(editingSetlistId);
     showView('libraryPanel');
     await loadLibrary();
   });
@@ -1652,6 +1738,7 @@ Was blind but now I see`;
   } else {
     showView('libraryPanel');
     loadLibrary();
+    startCloudLibrarySync();
   }
 })();
 </script>
