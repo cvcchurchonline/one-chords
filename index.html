@@ -317,7 +317,7 @@
     </div>
   </section>
 
-  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-20-s (fixed view overlap bug))</span></footer>
+  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-20-t (camera diagnostics))</span></footer>
 </div>
 <div id="customContextMenu" hidden></div>
 
@@ -345,7 +345,7 @@
     <h3>Join a Live Session</h3>
     <p>Point your camera at the host's QR code.</p>
     <div id="scanVideoWrap" style="position:relative;width:100%;aspect-ratio:1;background:#000;border-radius:10px;overflow:hidden;margin-bottom:14px;">
-      <video id="scanVideo" playsinline muted style="width:100%;height:100%;object-fit:cover;display:block;"></video>
+      <video id="scanVideo" playsinline webkit-playsinline muted autoplay style="width:100%;height:100%;object-fit:cover;display:block;"></video>
       <div style="position:absolute;inset:14%;border:3px solid rgba(255,255,255,.85);border-radius:14px;box-shadow:0 0 0 999px rgba(0,0,0,.25);pointer-events:none;"></div>
     </div>
     <p id="scanStatus" style="font-size:12.5px;color:var(--ink-soft);min-height:18px;margin:0 0 12px;"></p>
@@ -782,6 +782,11 @@
       document.getElementById('scanManualRow').style.display = 'flex';
       return;
     }
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      document.getElementById('scanStatus').textContent = "This browser/app doesn't expose camera access here (navigator.mediaDevices missing) — you can type the code instead.";
+      document.getElementById('scanManualRow').style.display = 'flex';
+      return;
+    }
     try{
       scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
       const video = document.getElementById('scanVideo');
@@ -792,7 +797,12 @@
       scanRafId = requestAnimationFrame(scanLoop);
     }catch(err){
       console.error('Camera error:', err);
-      document.getElementById('scanStatus').textContent = "Couldn't access the camera — you can type the code instead.";
+      // Show the real error name/message so we can pinpoint the exact cause
+      // instead of guessing (e.g. NotAllowedError = permission denied,
+      // NotFoundError = no camera device, NotSupportedError/SecurityError =
+      // blocked in this context such as an installed standalone app).
+      document.getElementById('scanStatus').textContent =
+        "Camera error: " + (err.name || 'Unknown') + " — " + (err.message || 'no details') + ". You can type the code instead.";
       document.getElementById('scanManualRow').style.display = 'flex';
     }
   }
