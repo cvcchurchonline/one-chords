@@ -134,7 +134,22 @@
     font-weight:700;font-size:13px;color:var(--chord);cursor:pointer;padding:6px 10px;
     border:1px dashed var(--chord);border-radius:8px;background:var(--chord-bg);
   }
-  .more-options-dropdown{right:0;min-width:230px;}
+  .more-options-dropdown{right:0;min-width:240px;}
+  .more-options-dropdown .toolgroup{display:flex;align-items:center;gap:6px;}
+  .more-options-dropdown .glabel{font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-soft);margin-right:4px;font-weight:600;}
+  .more-options-dropdown input[type=number]{
+    width:56px;padding:6px 8px;border:1px solid var(--rule);border-radius:6px;background:var(--paper);color:var(--ink);font-family:inherit;font-size:13px;
+  }
+  .more-options-dropdown .stepbtn{
+    width:30px;height:30px;padding:0;border-radius:6px;font-size:15px;line-height:1;
+    border:1px solid var(--rule);background:var(--paper);color:var(--ink);font-weight:700;
+  }
+  .more-options-dropdown .readout{font-family:'IBM Plex Mono',monospace;font-size:13px;min-width:36px;text-align:center;color:var(--chord);font-weight:600;}
+  .more-options-dropdown input[type=range]{accent-color:var(--chord);width:100px;}
+  .more-options-dropdown .toggle{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink);cursor:pointer;}
+  .more-options-dropdown button.ghost{
+    border:1px solid var(--rule) !important;background:var(--card) !important;color:var(--ink) !important;padding:9px 16px !important;font-weight:600 !important;
+  }
 
   .btn-glossy-blue{
     background:linear-gradient(180deg, #6FC3F0 0%, #3E9DDD 55%, #2E86C9 100%);
@@ -408,7 +423,7 @@
     </div>
   </section>
 
-  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-21-b (lighter toolbar, persistent live code))</span></footer>
+  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-21-c (fix more-options menu, hide header while playing))</span></footer>
 </div>
 <div id="customContextMenu" hidden></div>
 
@@ -1074,6 +1089,11 @@
     // stays visible underneath whichever view is actually meant to show.
     document.getElementById('viewerPanel').style.display = (name === 'viewerPanel') ? 'flex' : 'none';
     appEl.classList.toggle('viewer-mode', name === 'viewerPanel');
+    // The app title/subtitle header was always eating vertical space, even
+    // while actively playing or live — hiding it here is the real fix for
+    // "more focus on lyrics." The toolbar (settings) stays fully visible.
+    const header = document.querySelector('header');
+    if(header) header.style.display = (name === 'viewerPanel') ? 'none' : '';
   }
 
   // Chord-above lines rely on literal spaces for alignment, so they can't
