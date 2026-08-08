@@ -150,6 +150,7 @@
   .song-line.blank{height:1.4em;}
   .song-line.section-label{color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:0.06em;font-family:'Inter',sans-serif;font-size:0.78em;margin:18px 0 6px;border-bottom:1px solid var(--rule);padding-bottom:4px;}
   .chordrow{color:var(--chord);font-weight:600;white-space:pre;min-height:1.2em;}
+  .chord-badge{color:var(--chord);font-weight:800;background:var(--chord-bg);border-radius:5px;padding:1px 6px;display:inline-block;}
   .lyricrow{color:var(--ink);white-space:pre;}
   .inline-chord{color:var(--chord);font-weight:800;background:var(--chord-bg);border-radius:5px;padding:1px 5px;margin-right:2px;font-size:0.8em;white-space:normal;display:inline-block;}
   .empty-state{text-align:center;color:var(--ink-soft);padding:60px 20px;font-size:14px;}
@@ -318,7 +319,7 @@
     </div>
   </section>
 
-  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-20-u (cross-device library sync))</span></footer>
+  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-20-v (chord badges, bigger above-mode text))</span></footer>
 </div>
 <div id="customContextMenu" hidden></div>
 
@@ -555,16 +556,22 @@
         }
         html += '<div class="song-line"><div class="lyricrow">' + (row || '&nbsp;') + '</div></div>';
       } else {
-        let chordRow = '', lyricRow = '';
+        // Track column position using raw chord text length (for accurate
+        // alignment against the lyric below), but render each chord as a
+        // highlighted badge rather than plain text.
+        let chordRowText = '', chordRowHtml = '', lyricRow = '';
         const hasLyrics = segs.some(s => s.text.trim() !== '');
         for(const s of segs){
           const start = lyricRow.length;
-          while(chordRow.length < start) chordRow += ' ';
-          chordRow += (s.chord || '');
+          while(chordRowText.length < start){ chordRowText += ' '; chordRowHtml += ' '; }
+          if(s.chord){
+            chordRowHtml += '<span class="chord-badge">' + escapeHtml(s.chord) + '</span>';
+            chordRowText += s.chord;
+          }
           lyricRow += s.text;
         }
         html += '<div class="song-line">';
-        if(chordRow.trim() !== '') html += '<div class="chordrow">' + escapeHtml(chordRow) + '</div>';
+        if(chordRowText.trim() !== '') html += '<div class="chordrow">' + chordRowHtml + '</div>';
         if(hasLyrics) html += '<div class="lyricrow">' + escapeHtml(lyricRow) + '</div>';
         html += '</div>';
       }
@@ -822,7 +829,7 @@
         const parsed = parseSong(state.text, state.format);
         renderSong(parsed, state.semitones, state.preferFlats, state.displayMode, 'followSongContent');
         if(state.displayMode === 'above'){
-          fitTextToWidth('followSongContent', 'followScrollContainer', 20, 9);
+          fitTextToWidth('followSongContent', 'followScrollContainer', 26, 14);
         } else {
           document.getElementById('followSongContent').style.fontSize = '20px';
         }
@@ -991,7 +998,7 @@
     // losing alignment, so it still needs shrink-to-fit as a safety net.
     // Inline wraps naturally, so it just keeps the full chosen size.
     if(displayMode === 'above'){
-      fitTextToWidth('songContent', 'scrollContainer', fontSize, 10);
+      fitTextToWidth('songContent', 'scrollContainer', fontSize + 6, 14);
     } else {
       const el = document.getElementById('songContent');
       if(el) el.style.fontSize = fontSize + 'px';
@@ -1013,7 +1020,7 @@
     if(!document.getElementById('followPanel').hidden){
       const followEl = document.getElementById('followSongContent');
       if(followEl && followEl.style.whiteSpace === 'pre'){
-        fitTextToWidth('followSongContent', 'followScrollContainer', 20, 9);
+        fitTextToWidth('followSongContent', 'followScrollContainer', 26, 14);
       }
     }
   });
