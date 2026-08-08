@@ -78,7 +78,7 @@
   #customContextMenu button:hover{background:var(--paper);color:var(--ink);}
 
   .jump-dropdown{
-    position:absolute;top:calc(100% + 6px);left:0;z-index:60;
+    position:absolute;top:calc(100% + 6px);right:0;z-index:60;
     background:var(--card);border:1px solid var(--rule);border-radius:10px;
     box-shadow:0 8px 24px rgba(0,0,0,.2);padding:6px;min-width:190px;max-height:340px;overflow-y:auto;
   }
@@ -326,14 +326,14 @@
       </div>
       <button id="playBtn">▶ Play</button>
       <button class="ghost" id="topBtn">Top</button>
-      <div style="position:relative;">
-        <button class="ghost" id="jumpMenuBtn">📍 Sections</button>
-        <div id="jumpMenuDropdown" class="jump-dropdown" hidden></div>
-      </div>
       <div class="spacer"></div>
       <button id="goLiveBtn">📡 Go Live</button>
       <button class="danger" id="stopLiveBtn" hidden>⏹ Stop Live</button>
       <button class="ghost" id="editFromPlayerBtn">Edit song</button>
+      <div style="position:relative;">
+        <button class="ghost" id="jumpMenuBtn">📍 Sections</button>
+        <div id="jumpMenuDropdown" class="jump-dropdown" hidden></div>
+      </div>
       <button class="ghost" id="backToLibraryBtn">◀ Library</button>
     </div>
     <div id="setlistContext" class="setlist-context" hidden>
@@ -359,7 +359,7 @@
     </div>
   </section>
 
-  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-20-x (fixed section buttons + bracket fix))</span></footer>
+  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-20-y (dropdown stays open, smooth jump during play))</span></footer>
 </div>
 <div id="customContextMenu" hidden></div>
 
@@ -1539,8 +1539,16 @@ Was blind but now I see`;
   function jumpToSection(el){
     const containerRect = scrollContainer.getBoundingClientRect();
     const elRect = el.getBoundingClientRect();
-    const target = elRect.top - containerRect.top + scrollContainer.scrollTop - 18;
-    scrollContainer.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
+    const target = Math.max(0, elRect.top - containerRect.top + scrollContainer.scrollTop - 18);
+    if(scrolling){
+      // Auto-scroll already moves scrollTop every frame on its own; a native
+      // smooth-scroll animation running at the same time fights it and looks
+      // janky. Jump straight there instead and let auto-scroll continue
+      // seamlessly from the new spot.
+      scrollContainer.scrollTop = target;
+    } else {
+      scrollContainer.scrollTo({ top: target, behavior: 'smooth' });
+    }
   }
 
   function toggleJumpMenu(){
@@ -1554,7 +1562,9 @@ Was blind but now I see`;
       sections.forEach((s) => {
         const btn = document.createElement('button');
         btn.textContent = s.name;
-        btn.addEventListener('click', () => { jumpToSection(s.el); dropdown.hidden = true; });
+        // Stays open after each tap — stopPropagation keeps the click from
+        // bubbling up to the outside-click listener that would close it.
+        btn.addEventListener('click', (e) => { e.stopPropagation(); jumpToSection(s.el); });
         dropdown.appendChild(btn);
       });
     }
