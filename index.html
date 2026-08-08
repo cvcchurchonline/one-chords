@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-title" content="One Chords">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;0,700;1,600&family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;0,700;1,600&family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;600;700&family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --paper:#F6F1E3; --card:#FFFDF8; --ink:#2A241E; --ink-soft:#7A7062;
@@ -137,6 +137,20 @@
     background:transparent;border:none;
   }
   .more-options-dropdown{right:0;min-width:240px;}
+
+  .btn-chip{
+    background:transparent;border-radius:9px;font-weight:700;font-size:13px;
+    padding:8px 16px;letter-spacing:0.02em;border-width:1.5px;border-style:solid;
+  }
+  .btn-chip-teal{border-color:#3FB8A6;color:#3FB8A6;}
+  .btn-chip-teal:hover{background:rgba(63,184,166,.12);}
+  .btn-chip-teal.playing{border-color:var(--danger);color:var(--danger);box-shadow:0 0 0 2px rgba(160,69,58,.18);}
+  .btn-chip-gold{border-color:var(--gold);color:var(--gold);}
+  .btn-chip-gold:hover{background:rgba(184,132,43,.12);}
+  .btn-chip-red{border-color:var(--danger);color:var(--danger);}
+  .btn-chip-red:hover{background:rgba(160,69,58,.12);}
+  .btn-chip-green{border-color:var(--chord);color:var(--chord);}
+  .btn-chip-green:hover{background:rgba(63,184,166,.10);}
 
   .btn-glossy-blue{
     background:linear-gradient(180deg, #6FC3F0 0%, #3E9DDD 55%, #2E86C9 100%);
@@ -336,14 +350,8 @@
       <div class="toolgroup">
         <span class="glabel">Font</span>
         <button class="stepbtn tb-light" id="fontDown">−1</button>
+        <span class="readout" id="fontSizeReadout" style="min-width:34px;">20</span>
         <button class="stepbtn tb-light" id="fontUp">+1</button>
-      </div>
-      <div class="toolgroup">
-        <span class="glabel">Chords</span>
-        <select id="displayMode">
-          <option value="above">Above</option>
-          <option value="inline" selected>Inline</option>
-        </select>
       </div>
       <div class="toolgroup">
         <span class="glabel">Transpose</span>
@@ -351,18 +359,41 @@
         <span class="readout" id="transReadout">0</span>
         <button class="stepbtn tb-light" id="transUp">+1</button>
       </div>
-      <button class="tb-primary" id="playBtn">▶ Autoscroll</button>
+      <button class="btn-chip btn-chip-teal" id="playBtn">▶ Autoscroll</button>
       <button class="tb-light" id="topBtn">Top</button>
       <div class="spacer"></div>
       <span id="liveCodeBadge" class="live-code-badge" hidden title="Tap to show the QR code / join code again">
         🔴 <span id="liveCodeBadgeText"></span>
       </span>
-      <button class="tb-simple" id="goLiveBtn">Go Live</button>
-      <button class="tb-simple" id="stopLiveBtn" hidden>Stop Live</button>
+      <button class="btn-chip btn-chip-gold" id="goLiveBtn">Go Live</button>
+      <button class="btn-chip btn-chip-red" id="stopLiveBtn" hidden>Stop Live</button>
+
+      <div style="position:relative;">
+        <button class="tb-light" id="appearanceBtn">⚙</button>
+        <div id="appearanceDropdown" class="jump-dropdown more-options-dropdown" hidden>
+          <div class="toolgroup" style="padding:8px 10px;">
+            <span class="glabel">Font</span>
+            <select id="fontFamilySelect">
+              <option value="inter" selected>Inter</option>
+              <option value="roboto">Roboto</option>
+              <option value="opensans">Open Sans</option>
+              <option value="system">SF Pro (System)</option>
+            </select>
+          </div>
+          <div class="toolgroup" style="padding:8px 10px;">
+            <span class="glabel">Chords</span>
+            <select id="displayMode">
+              <option value="above">Above</option>
+              <option value="inline" selected>Inline</option>
+            </select>
+          </div>
+          <label class="toggle" style="padding:8px 10px;"><input type="checkbox" id="flatsToggle"> Prefer flats</label>
+        </div>
+      </div>
+
       <div style="position:relative;">
         <button class="tb-light" id="moreOptionsBtn">•••</button>
         <div id="moreOptionsDropdown" class="jump-dropdown more-options-dropdown" hidden>
-          <label class="toggle" style="padding:8px 10px;"><input type="checkbox" id="flatsToggle"> Prefer flats</label>
           <div class="toolgroup" style="padding:6px 10px;">
             <span class="glabel">Tempo</span>
             <input type="number" id="bpmInput" min="20" max="300" value="80" style="width:56px;padding:6px 8px;">
@@ -385,7 +416,7 @@
           <button class="ghost" id="editFromPlayerBtn" style="width:calc(100% - 12px);margin:6px;">Edit song</button>
         </div>
       </div>
-      <button class="tb-simple" id="backToLibraryBtn">Library</button>
+      <button class="btn-chip btn-chip-green" id="backToLibraryBtn">Library</button>
     </div>
     <div id="setlistContext" class="setlist-context" hidden>
       <span id="setlistContextLabel"></span>
@@ -410,7 +441,7 @@
     </div>
   </section>
 
-  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-21-d (bulletproof dropdown fix + simplified buttons))</span></footer>
+  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-21-e (font selector, chip buttons, appearance menu))</span></footer>
 </div>
 <div id="customContextMenu" hidden></div>
 
@@ -608,18 +639,25 @@
 
   function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-  const SANS_STACK = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Inter, 'Helvetica Neue', Arial, sans-serif";
+  const FONT_STACKS = {
+    system: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+    roboto: "'Roboto', -apple-system, sans-serif",
+    inter: "'Inter', -apple-system, sans-serif",
+    opensans: "'Open Sans', -apple-system, sans-serif"
+  };
   const MONO_STACK = "'IBM Plex Mono', monospace";
 
   function renderSong(parsedLines, semitones, preferFlats, mode, targetId){
     const container = document.getElementById(targetId || 'songContent');
     if(mode === 'inline'){
-      container.style.fontFamily = SANS_STACK;
-      container.style.fontWeight = '700';
+      container.style.fontFamily = FONT_STACKS[songFont] || FONT_STACKS.inter;
+      // Semibold rather than thin/bold — stays legible on bright outdoor
+      // screens without being as heavy as a full bold weight.
+      container.style.fontWeight = '600';
       container.style.whiteSpace = 'normal';
       container.style.width = '100%';
       container.style.minWidth = '';
-      container.style.lineHeight = '1.75';
+      container.style.lineHeight = '1.55';
     } else {
       container.style.fontFamily = MONO_STACK;
       container.style.fontWeight = '700';
@@ -855,6 +893,7 @@
       semitones: semitones,
       preferFlats: preferFlats,
       displayMode: displayMode,
+      songFont: songFont,
       scrollPercent: percent,
       updatedAt: now
     });
@@ -927,9 +966,10 @@
         return;
       }
       document.getElementById('followTitle').innerHTML = state.title || 'Untitled song';
-      const key = state.text + '|' + state.format + '|' + state.semitones + '|' + state.preferFlats + '|' + state.displayMode;
+      const key = state.text + '|' + state.format + '|' + state.semitones + '|' + state.preferFlats + '|' + state.displayMode + '|' + state.songFont;
       if(key !== followRenderKey){
         followRenderKey = key;
+        songFont = state.songFont || 'inter';
         const parsed = parseSong(state.text, state.format);
         renderSong(parsed, state.semitones, state.preferFlats, state.displayMode, 'followSongContent');
         if(state.displayMode === 'above'){
@@ -1055,6 +1095,7 @@
   let preferFlats = false;
   let displayMode = 'inline';
   let fontSize = 20;
+  let songFont = 'inter';
 
   let currentSongId = null;
   let editingSongId = null;
@@ -1590,10 +1631,12 @@ Was blind but now I see`;
   document.getElementById('displayMode').addEventListener('change', (e) => { displayMode = e.target.value; doRender(); broadcastState(true); });
   document.getElementById('fontUp').addEventListener('click', () => {
     fontSize = Math.min(fontSize + 1, 34);
+    document.getElementById('fontSizeReadout').textContent = fontSize;
     applySongFontSize();
   });
   document.getElementById('fontDown').addEventListener('click', () => {
     fontSize = Math.max(fontSize - 1, 12);
+    document.getElementById('fontSizeReadout').textContent = fontSize;
     applySongFontSize();
   });
   document.getElementById('topBtn').addEventListener('click', () => { scrollContainer.scrollTop = 0; });
@@ -1645,12 +1688,25 @@ Was blind but now I see`;
   document.addEventListener('click', () => {
     document.getElementById('jumpMenuDropdown').hidden = true;
     document.getElementById('moreOptionsDropdown').hidden = true;
+    document.getElementById('appearanceDropdown').hidden = true;
   });
   document.getElementById('moreOptionsBtn').addEventListener('click', (e) => {
     e.stopPropagation();
+    document.getElementById('appearanceDropdown').hidden = true;
     document.getElementById('moreOptionsDropdown').hidden = !document.getElementById('moreOptionsDropdown').hidden;
   });
   document.getElementById('moreOptionsDropdown').addEventListener('click', (e) => { e.stopPropagation(); });
+  document.getElementById('appearanceBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.getElementById('moreOptionsDropdown').hidden = true;
+    document.getElementById('appearanceDropdown').hidden = !document.getElementById('appearanceDropdown').hidden;
+  });
+  document.getElementById('appearanceDropdown').addEventListener('click', (e) => { e.stopPropagation(); });
+  document.getElementById('fontFamilySelect').addEventListener('change', (e) => {
+    songFont = e.target.value;
+    doRender();
+    broadcastState(true);
+  });
 
   // ---------- Fixed quick-jump section buttons ----------
   const QSEC_MATCHERS = {
