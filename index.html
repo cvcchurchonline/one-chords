@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-title" content="One Chords">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;0,700;1,600&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;0,700;1,600&family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --paper:#F6F1E3; --card:#FFFDF8; --ink:#2A241E; --ink-soft:#7A7062;
@@ -84,7 +84,8 @@
   }
   .jump-dropdown button{
     display:block;width:100%;text-align:left;padding:9px 12px;border:none;background:transparent;
-    border-radius:6px;font-weight:600;font-size:13.5px;color:var(--ink);
+    border-radius:6px;font-weight:700;font-size:13px;color:var(--ink);letter-spacing:0.02em;
+    text-transform:uppercase;
   }
   .jump-dropdown button:hover{background:var(--paper);}
   .jump-dropdown .jump-empty{padding:10px 12px;color:var(--ink-soft);font-size:12.5px;font-weight:500;line-height:1.5;}
@@ -285,6 +286,10 @@
 
   <!-- PLAYER -->
   <section id="viewerPanel" class="view" style="padding:0;display:flex;flex-direction:column;" hidden>
+    <div id="jumpMenuAnchor" style="position:fixed;top:12px;right:12px;z-index:80;">
+      <button class="ghost" id="jumpMenuBtn">📍 SECTIONS</button>
+      <div id="jumpMenuDropdown" class="jump-dropdown" hidden></div>
+    </div>
     <div class="toolbar">
       <div class="toolgroup">
         <span class="glabel">Transpose</span>
@@ -330,10 +335,6 @@
       <button id="goLiveBtn">📡 Go Live</button>
       <button class="danger" id="stopLiveBtn" hidden>⏹ Stop Live</button>
       <button class="ghost" id="editFromPlayerBtn">Edit song</button>
-      <div style="position:relative;">
-        <button class="ghost" id="jumpMenuBtn">📍 Sections</button>
-        <div id="jumpMenuDropdown" class="jump-dropdown" hidden></div>
-      </div>
       <button class="ghost" id="backToLibraryBtn">◀ Library</button>
     </div>
     <div id="setlistContext" class="setlist-context" hidden>
@@ -359,7 +360,7 @@
     </div>
   </section>
 
-  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-20-y (dropdown stays open, smooth jump during play))</span></footer>
+  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-20-z (pinned sections corner, caps, bold above-mode))</span></footer>
 </div>
 <div id="customContextMenu" hidden></div>
 
@@ -571,7 +572,7 @@
       container.style.lineHeight = '1.75';
     } else {
       container.style.fontFamily = MONO_STACK;
-      container.style.fontWeight = '400';
+      container.style.fontWeight = '700';
       container.style.whiteSpace = 'pre';
       container.style.width = 'max-content';
       container.style.minWidth = '100%';
