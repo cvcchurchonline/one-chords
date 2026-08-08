@@ -106,50 +106,37 @@
   @media (max-width:640px){ .quick-section-bar{padding:10px 14px;} }
 
   /* Lighter, more minimal player toolbar — buttons read as plain text/labels
-     rather than boxed controls, freeing more room for the lyrics below and
-     matching the simpler look requested. Library and Sections keep their
-     existing distinct styling on purpose. */
+     rather than boxed controls, freeing more room for the lyrics below.
+     Uses an opt-in class (instead of excluding elements) so nothing inside
+     the "•••" dropdown can ever accidentally inherit this styling again. */
   .toolbar-lite{padding:9px 32px;gap:14px;}
   .toolbar-lite .toolgroup{gap:5px;}
   .toolbar-lite .glabel{font-weight:500;font-size:10.5px;}
-  .toolbar-lite button:not(.tb-primary):not(.btn-glossy-blue):not(#goLiveBtn):not(.danger){
-    border:none;background:transparent;padding:5px 7px;font-weight:600;color:var(--ink);
-  }
-  .toolbar-lite button:not(.tb-primary):not(.btn-glossy-blue):not(#goLiveBtn):not(.danger):hover{
-    background:var(--paper);
-  }
-  .toolbar-lite .stepbtn{width:auto;height:auto;padding:5px 8px;font-size:13px;}
+  .tb-light{border:none;background:transparent;padding:5px 7px;font-weight:600;color:var(--ink);}
+  .tb-light:hover{background:var(--paper);}
+  .tb-light.stepbtn{width:auto;height:auto;padding:5px 8px;font-size:13px;}
   .toolbar-lite select{border:none;background:transparent;font-weight:600;padding:4px 6px;color:var(--ink);}
-  .toolbar-lite .tb-primary{
+  .tb-primary{
     background:transparent;border:1.5px solid var(--rule);border-radius:8px;color:var(--ink);
     font-weight:700;padding:7px 14px;
   }
-  .toolbar-lite .tb-primary.playing{border-color:var(--danger);color:var(--danger);}
-  .toolbar-lite #goLiveBtn{background:transparent;border:1.5px solid var(--gold);color:var(--gold);font-weight:700;}
-  .toolbar-lite #goLiveBtn:hover{background:var(--gold);color:#fff;}
-  .toolbar-lite .danger{background:transparent;font-weight:700;}
+  .tb-primary.playing{border-color:var(--danger);color:var(--danger);}
 
+  /* Simple/light styling for Go Live, Stop Live, Library, and the live-code
+     badge — plain text-forward controls instead of heavy colored buttons. */
+  .tb-simple{background:transparent;border:none;font-weight:600;font-size:13.5px;padding:6px 8px;}
+  #goLiveBtn.tb-simple{color:var(--gold);}
+  #goLiveBtn.tb-simple:hover{background:var(--paper);}
+  #stopLiveBtn.tb-simple{color:var(--danger);}
+  #stopLiveBtn.tb-simple:hover{background:var(--paper);}
+  #backToLibraryBtn.tb-simple{color:var(--chord);}
+  #backToLibraryBtn.tb-simple:hover{background:var(--paper);}
   .live-code-badge{
-    display:inline-flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;
-    font-weight:700;font-size:13px;color:var(--chord);cursor:pointer;padding:6px 10px;
-    border:1px dashed var(--chord);border-radius:8px;background:var(--chord-bg);
+    display:inline-flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;
+    font-weight:600;font-size:12.5px;color:var(--chord);cursor:pointer;padding:4px 2px;
+    background:transparent;border:none;
   }
   .more-options-dropdown{right:0;min-width:240px;}
-  .more-options-dropdown .toolgroup{display:flex;align-items:center;gap:6px;}
-  .more-options-dropdown .glabel{font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-soft);margin-right:4px;font-weight:600;}
-  .more-options-dropdown input[type=number]{
-    width:56px;padding:6px 8px;border:1px solid var(--rule);border-radius:6px;background:var(--paper);color:var(--ink);font-family:inherit;font-size:13px;
-  }
-  .more-options-dropdown .stepbtn{
-    width:30px;height:30px;padding:0;border-radius:6px;font-size:15px;line-height:1;
-    border:1px solid var(--rule);background:var(--paper);color:var(--ink);font-weight:700;
-  }
-  .more-options-dropdown .readout{font-family:'IBM Plex Mono',monospace;font-size:13px;min-width:36px;text-align:center;color:var(--chord);font-weight:600;}
-  .more-options-dropdown input[type=range]{accent-color:var(--chord);width:100px;}
-  .more-options-dropdown .toggle{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink);cursor:pointer;}
-  .more-options-dropdown button.ghost{
-    border:1px solid var(--rule) !important;background:var(--card) !important;color:var(--ink) !important;padding:9px 16px !important;font-weight:600 !important;
-  }
 
   .btn-glossy-blue{
     background:linear-gradient(180deg, #6FC3F0 0%, #3E9DDD 55%, #2E86C9 100%);
@@ -221,7 +208,7 @@
   #playBtn.playing:hover{background:#873a30;}
   .beat-dot{width:11px;height:11px;border-radius:50%;background:var(--rule);display:inline-block;margin-left:2px;transition:background .07s ease, transform .07s ease;}
   .beat-dot.pulse{background:var(--gold);transform:scale(1.4);}
-  .setlist-context{padding:10px 32px;background:var(--chord-bg);color:var(--chord);font-size:13px;font-weight:600;display:flex;align-items:center;gap:10px;}
+  .setlist-context{padding:7px 32px;background:transparent;border-bottom:1px solid var(--rule);color:var(--chord);font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px;}
   .setlist-context .spacer{flex:1;}
   .song-title-bar{padding:12px 32px 10px;background:var(--card);border-bottom:1px solid var(--rule);}
   .song-title-bar span{font-family:'Fraunces',serif;font-style:italic;font-weight:700;font-size:20px;color:var(--ink);}
@@ -348,8 +335,8 @@
     <div class="toolbar toolbar-lite">
       <div class="toolgroup">
         <span class="glabel">Font</span>
-        <button class="stepbtn" id="fontDown">−1</button>
-        <button class="stepbtn" id="fontUp">+1</button>
+        <button class="stepbtn tb-light" id="fontDown">−1</button>
+        <button class="stepbtn tb-light" id="fontUp">+1</button>
       </div>
       <div class="toolgroup">
         <span class="glabel">Chords</span>
@@ -360,20 +347,20 @@
       </div>
       <div class="toolgroup">
         <span class="glabel">Transpose</span>
-        <button class="stepbtn" id="transDown">−1</button>
+        <button class="stepbtn tb-light" id="transDown">−1</button>
         <span class="readout" id="transReadout">0</span>
-        <button class="stepbtn" id="transUp">+1</button>
+        <button class="stepbtn tb-light" id="transUp">+1</button>
       </div>
       <button class="tb-primary" id="playBtn">▶ Autoscroll</button>
-      <button class="ghost" id="topBtn">Top</button>
+      <button class="tb-light" id="topBtn">Top</button>
       <div class="spacer"></div>
       <span id="liveCodeBadge" class="live-code-badge" hidden title="Tap to show the QR code / join code again">
         🔴 <span id="liveCodeBadgeText"></span>
       </span>
-      <button id="goLiveBtn">📡 Go Live</button>
-      <button class="danger" id="stopLiveBtn" hidden>⏹ Stop Live</button>
+      <button class="tb-simple" id="goLiveBtn">Go Live</button>
+      <button class="tb-simple" id="stopLiveBtn" hidden>Stop Live</button>
       <div style="position:relative;">
-        <button class="ghost" id="moreOptionsBtn">•••</button>
+        <button class="tb-light" id="moreOptionsBtn">•••</button>
         <div id="moreOptionsDropdown" class="jump-dropdown more-options-dropdown" hidden>
           <label class="toggle" style="padding:8px 10px;"><input type="checkbox" id="flatsToggle"> Prefer flats</label>
           <div class="toolgroup" style="padding:6px 10px;">
@@ -398,13 +385,13 @@
           <button class="ghost" id="editFromPlayerBtn" style="width:calc(100% - 12px);margin:6px;">Edit song</button>
         </div>
       </div>
-      <button class="btn-glossy-blue" id="backToLibraryBtn">Library 🎵</button>
+      <button class="tb-simple" id="backToLibraryBtn">Library</button>
     </div>
     <div id="setlistContext" class="setlist-context" hidden>
       <span id="setlistContextLabel"></span>
       <div class="spacer"></div>
-      <button class="small ghost" id="prevSongBtn">◀ Prev</button>
-      <button class="small ghost" id="nextSongBtn">Next ▶</button>
+      <button class="small tb-light" id="prevSongBtn">◀ Prev</button>
+      <button class="small tb-light" id="nextSongBtn">Next ▶</button>
     </div>
     <div id="songTitleBar" class="song-title-bar" hidden>
       <span id="songTitleText"></span>
@@ -423,7 +410,7 @@
     </div>
   </section>
 
-  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-21-c (fix more-options menu, hide header while playing))</span></footer>
+  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-21-d (bulletproof dropdown fix + simplified buttons))</span></footer>
 </div>
 <div id="customContextMenu" hidden></div>
 
