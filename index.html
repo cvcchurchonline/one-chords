@@ -77,6 +77,18 @@
   }
   #customContextMenu button:hover{background:var(--paper);color:var(--ink);}
 
+  .jump-dropdown{
+    position:absolute;top:calc(100% + 6px);left:0;z-index:60;
+    background:var(--card);border:1px solid var(--rule);border-radius:10px;
+    box-shadow:0 8px 24px rgba(0,0,0,.2);padding:6px;min-width:190px;max-height:340px;overflow-y:auto;
+  }
+  .jump-dropdown button{
+    display:block;width:100%;text-align:left;padding:9px 12px;border:none;background:transparent;
+    border-radius:6px;font-weight:600;font-size:13.5px;color:var(--ink);
+  }
+  .jump-dropdown button:hover{background:var(--paper);}
+  .jump-dropdown .jump-empty{padding:10px 12px;color:var(--ink-soft);font-size:12.5px;font-weight:500;line-height:1.5;}
+
   .live-modal{position:fixed;inset:0;background:rgba(42,36,30,.55);display:flex;align-items:center;justify-content:center;z-index:900;padding:20px;}
   .live-modal-card{background:var(--card);border-radius:14px;padding:28px;max-width:360px;width:100%;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.25);}
   .live-modal-card h3{margin:0 0 8px;font-family:'Fraunces',serif;font-style:italic;font-size:22px;}
@@ -143,7 +155,7 @@
   .song-title-bar{padding:12px 32px 10px;background:var(--card);border-bottom:1px solid var(--rule);}
   .song-title-bar span{font-family:'Fraunces',serif;font-style:italic;font-weight:700;font-size:20px;color:var(--ink);}
 
-  #scrollContainer{flex:1;min-height:0;overflow-y:auto;overflow-x:auto;padding:36px 40px 60vh;scroll-behavior:auto;-webkit-overflow-scrolling:touch;}
+  #scrollContainer{flex:1;min-height:0;overflow-y:auto;overflow-x:auto;padding:36px 40px 60vh;scroll-behavior:auto;}
   #songContent{font-family:'IBM Plex Mono',monospace;font-size:var(--song-size,20px);line-height:2.05;white-space:pre;width:max-content;min-width:100%;}
   .song-line .lyricrow, .song-line .chordrow{transition:opacity .25s ease, color .25s ease;}
   .song-line{margin-bottom:2px;}
@@ -299,6 +311,10 @@
       </div>
       <button id="playBtn">▶ Play</button>
       <button class="ghost" id="topBtn">Top</button>
+      <div style="position:relative;">
+        <button class="ghost" id="jumpMenuBtn">📍 Sections</button>
+        <div id="jumpMenuDropdown" class="jump-dropdown" hidden></div>
+      </div>
       <div class="spacer"></div>
       <button id="goLiveBtn">📡 Go Live</button>
       <button class="danger" id="stopLiveBtn" hidden>⏹ Stop Live</button>
@@ -319,7 +335,7 @@
     </div>
   </section>
 
-  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-20-v (chord badges, bigger above-mode text))</span></footer>
+  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-20-w (section jump + smooth scroll fix))</span></footer>
 </div>
 <div id="customContextMenu" hidden></div>
 
@@ -373,7 +389,7 @@
     </label>
     <button class="ghost" id="leaveLiveBtn">Leave</button>
   </div>
-  <div id="followScrollContainer" style="flex:1;min-height:0;overflow-y:auto;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:36px 24px 60vh;">
+  <div id="followScrollContainer" style="flex:1;min-height:0;overflow-y:auto;overflow-x:auto;padding:36px 24px 60vh;">
     <div id="followSongContent" style="font-family:'IBM Plex Mono',monospace;font-size:20px;line-height:2.05;white-space:pre;width:max-content;min-width:100%;"></div>
   </div>
 </section>
@@ -1009,6 +1025,7 @@
     try{
       renderSong(parsedSong, semitones, preferFlats, displayMode);
       applySongFontSize();
+      refreshLineHeightCache();
     }catch(err){
       console.error('Render error:', err);
       document.getElementById('songContent').innerHTML =
@@ -1016,7 +1033,7 @@
     }
   }
   window.addEventListener('resize', () => {
-    if(!document.getElementById('viewerPanel').hidden) applySongFontSize();
+    if(!document.getElementById('viewerPanel').hidden){ applySongFontSize(); refreshLineHeightCache(); }
     if(!document.getElementById('followPanel').hidden){
       const followEl = document.getElementById('followSongContent');
       if(followEl && followEl.style.whiteSpace === 'pre'){
@@ -1487,6 +1504,42 @@ Was blind but now I see`;
   });
   document.getElementById('topBtn').addEventListener('click', () => { scrollContainer.scrollTop = 0; });
 
+  // ---------- Jump to section ----------
+  function getSongSections(){
+    return Array.from(document.querySelectorAll('#songContent .song-line.section-label'))
+      .map((el) => ({ name: el.textContent, el }));
+  }
+
+  function jumpToSection(el){
+    const containerRect = scrollContainer.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+    const target = elRect.top - containerRect.top + scrollContainer.scrollTop - 18;
+    scrollContainer.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
+  }
+
+  function toggleJumpMenu(){
+    const dropdown = document.getElementById('jumpMenuDropdown');
+    if(!dropdown.hidden){ dropdown.hidden = true; return; }
+    const sections = getSongSections();
+    dropdown.innerHTML = '';
+    if(sections.length === 0){
+      dropdown.innerHTML = '<div class="jump-empty">No sections found in this song. Add labels like "Verse 1" or "Chorus" on their own line to enable jumping.</div>';
+    } else {
+      sections.forEach((s) => {
+        const btn = document.createElement('button');
+        btn.textContent = s.name;
+        btn.addEventListener('click', () => { jumpToSection(s.el); dropdown.hidden = true; });
+        dropdown.appendChild(btn);
+      });
+    }
+    dropdown.hidden = false;
+  }
+  document.getElementById('jumpMenuBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleJumpMenu();
+  });
+  document.addEventListener('click', () => { document.getElementById('jumpMenuDropdown').hidden = true; });
+
   // ---------- Auto-scroll, driven by BPM ----------
   // Speed is derived from the song's tempo: one line advances every
   // `beatsPerLine` beats at the given BPM. This ties scroll speed to
@@ -1514,18 +1567,22 @@ Was blind but now I see`;
     return v;
   }
 
-  function getAvgLineHeightPx(){
+  let cachedLineHeightPx = null;
+  function refreshLineHeightCache(){
     const lines = document.querySelectorAll('#songContent .song-line:not(.blank)');
     let total = 0, count = 0;
     lines.forEach(el => { const h = el.offsetHeight; if(h > 0){ total += h; count++; } });
-    return count ? (total / count) : (fontSize * 2.05 * 2);
+    cachedLineHeightPx = count ? (total / count) : (fontSize * 2.05 * 2);
   }
 
   function getEffectivePxPerSec(){
     if(manualSpeedToggle.checked){
       return Math.max(1, Number(speedSlider.value));
     }
-    const lineHeight = getAvgLineHeightPx();
+    // Reads the cached measurement rather than re-querying the DOM every
+    // frame — recalculating layout 60x/second was the actual cause of the
+    // scroll jitter, since it forces a synchronous reflow each time.
+    const lineHeight = cachedLineHeightPx || (fontSize * 2.05 * 2);
     const bpm = currentBpm();
     return Math.max(1, (lineHeight * bpm) / (60 * beatsPerLine));
   }
@@ -1596,6 +1653,7 @@ Was blind but now I see`;
     scrolling = true;
     lastTime = null;
     scrollAccumulator = 0;
+    refreshLineHeightCache();
     playBtn.textContent = '⏸ Pause';
     playBtn.classList.add('playing');
     startBeatPulse();
