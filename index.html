@@ -89,6 +89,21 @@
   .jump-dropdown button:hover{background:var(--paper);}
   .jump-dropdown .jump-empty{padding:10px 12px;color:var(--ink-soft);font-size:12.5px;font-weight:500;line-height:1.5;}
 
+  .quick-section-bar{
+    display:flex;gap:8px;padding:10px 32px;overflow-x:auto;background:var(--paper);
+    border-bottom:1px solid var(--rule);
+  }
+  .qsec-btn{
+    flex:0 0 auto;font-family:'Inter',sans-serif;font-weight:800;font-size:12px;letter-spacing:0.03em;
+    padding:9px 14px;border-radius:8px;border:1.5px solid var(--chord);background:var(--chord);color:#fff;
+    white-space:nowrap;cursor:pointer;
+  }
+  .qsec-btn:active{transform:scale(0.96);}
+  .qsec-btn:disabled{
+    background:transparent;border-color:var(--rule);color:var(--ink-soft);opacity:0.5;cursor:not-allowed;
+  }
+  @media (max-width:640px){ .quick-section-bar{padding:10px 14px;} }
+
   .live-modal{position:fixed;inset:0;background:rgba(42,36,30,.55);display:flex;align-items:center;justify-content:center;z-index:900;padding:20px;}
   .live-modal-card{background:var(--card);border-radius:14px;padding:28px;max-width:360px;width:100%;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.25);}
   .live-modal-card h3{margin:0 0 8px;font-family:'Fraunces',serif;font-style:italic;font-size:22px;}
@@ -330,12 +345,21 @@
     <div id="songTitleBar" class="song-title-bar" hidden>
       <span id="songTitleText"></span>
     </div>
+    <div id="quickSectionBar" class="quick-section-bar">
+      <button class="qsec-btn" data-match="verse1">VERSE 1</button>
+      <button class="qsec-btn" data-match="verse2">VERSE 2</button>
+      <button class="qsec-btn" data-match="refrain">REFRAIN</button>
+      <button class="qsec-btn" data-match="chorus">CHORUS</button>
+      <button class="qsec-btn" data-match="bridge">BRIDGE</button>
+      <button class="qsec-btn" data-match="instrumental">INSTRUMENTAL</button>
+      <button class="qsec-btn" data-match="outro">ENDING / OUTRO</button>
+    </div>
     <div id="scrollContainer">
       <div id="songContent"></div>
     </div>
   </section>
 
-  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-20-w (section jump + smooth scroll fix))</span></footer>
+  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-20-x (fixed section buttons + bracket fix))</span></footer>
 </div>
 <div id="customContextMenu" hidden></div>
 
@@ -414,7 +438,8 @@
 
   function isChordToken(tok){ return CHORD_RE.test(tok); }
   function isChordLineToken(tok){ return CHORD_RE.test(tok) || EXTRA_RE.test(tok); }
-  function isSectionLabel(line){ return SECTION_RE.test(line.trim()); }
+  function stripSectionBrackets(line){ return line.trim().replace(/^\[+/, '').replace(/\]+$/, '').trim(); }
+  function isSectionLabel(line){ return SECTION_RE.test(stripSectionBrackets(line)); }
 
   function isChordLine(line){
     const trimmed = line.trim();
@@ -502,7 +527,7 @@
     if(format === 'chordpro'){
       for(const line of rawLines){
         if(line.trim()===''){ result.push({blank:true}); continue; }
-        if(isSectionLabel(line)){ result.push({section: line.trim()}); continue; }
+        if(isSectionLabel(line)){ result.push({section: stripSectionBrackets(line)}); continue; }
         result.push({segments: parseChordProLine(line)});
       }
       return result;
@@ -512,7 +537,7 @@
     while(i < rawLines.length){
       const line = rawLines[i];
       if(line.trim()===''){ result.push({blank:true}); i++; continue; }
-      if(isSectionLabel(line)){ result.push({section: line.trim()}); i += 1; continue; }
+      if(isSectionLabel(line)){ result.push({section: stripSectionBrackets(line)}); i += 1; continue; }
       if(isChordLine(line)){
         const next = rawLines[i+1];
         if(next !== undefined && next.trim() !== '' && !isChordLine(next) && !isSectionLabel(next)){
@@ -1026,6 +1051,7 @@
       renderSong(parsedSong, semitones, preferFlats, displayMode);
       applySongFontSize();
       refreshLineHeightCache();
+      refreshQuickSectionBar();
     }catch(err){
       console.error('Render error:', err);
       document.getElementById('songContent').innerHTML =
@@ -1539,6 +1565,33 @@ Was blind but now I see`;
     toggleJumpMenu();
   });
   document.addEventListener('click', () => { document.getElementById('jumpMenuDropdown').hidden = true; });
+
+  // ---------- Fixed quick-jump section buttons ----------
+  const QSEC_MATCHERS = {
+    verse1: /verse\s*1\b/i,
+    verse2: /verse\s*2\b/i,
+    refrain: /refrain/i,
+    chorus: /chorus/i,          // matched with a pre-chorus exclusion below
+    bridge: /bridge/i,
+    instrumental: /instrumental/i,
+    outro: /outro|ending/i
+  };
+  function findSectionFor(matchKey, sections){
+    const re = QSEC_MATCHERS[matchKey];
+    return sections.find((s) => {
+      const lower = s.name.toLowerCase();
+      if(matchKey === 'chorus' && lower.includes('pre-chorus')) return false;
+      return re.test(s.name);
+    }) || null;
+  }
+  function refreshQuickSectionBar(){
+    const sections = getSongSections();
+    document.querySelectorAll('.qsec-btn').forEach((btn) => {
+      const match = findSectionFor(btn.dataset.match, sections);
+      btn.disabled = !match;
+      btn.onclick = match ? () => jumpToSection(match.el) : null;
+    });
+  }
 
   // ---------- Auto-scroll, driven by BPM ----------
   // Speed is derived from the song's tempo: one line advances every
