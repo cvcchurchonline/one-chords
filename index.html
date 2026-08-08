@@ -105,6 +105,37 @@
   }
   @media (max-width:640px){ .quick-section-bar{padding:10px 14px;} }
 
+  /* Lighter, more minimal player toolbar — buttons read as plain text/labels
+     rather than boxed controls, freeing more room for the lyrics below and
+     matching the simpler look requested. Library and Sections keep their
+     existing distinct styling on purpose. */
+  .toolbar-lite{padding:9px 32px;gap:14px;}
+  .toolbar-lite .toolgroup{gap:5px;}
+  .toolbar-lite .glabel{font-weight:500;font-size:10.5px;}
+  .toolbar-lite button:not(.tb-primary):not(.btn-glossy-blue):not(#goLiveBtn):not(.danger){
+    border:none;background:transparent;padding:5px 7px;font-weight:600;color:var(--ink);
+  }
+  .toolbar-lite button:not(.tb-primary):not(.btn-glossy-blue):not(#goLiveBtn):not(.danger):hover{
+    background:var(--paper);
+  }
+  .toolbar-lite .stepbtn{width:auto;height:auto;padding:5px 8px;font-size:13px;}
+  .toolbar-lite select{border:none;background:transparent;font-weight:600;padding:4px 6px;color:var(--ink);}
+  .toolbar-lite .tb-primary{
+    background:transparent;border:1.5px solid var(--rule);border-radius:8px;color:var(--ink);
+    font-weight:700;padding:7px 14px;
+  }
+  .toolbar-lite .tb-primary.playing{border-color:var(--danger);color:var(--danger);}
+  .toolbar-lite #goLiveBtn{background:transparent;border:1.5px solid var(--gold);color:var(--gold);font-weight:700;}
+  .toolbar-lite #goLiveBtn:hover{background:var(--gold);color:#fff;}
+  .toolbar-lite .danger{background:transparent;font-weight:700;}
+
+  .live-code-badge{
+    display:inline-flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;
+    font-weight:700;font-size:13px;color:var(--chord);cursor:pointer;padding:6px 10px;
+    border:1px dashed var(--chord);border-radius:8px;background:var(--chord-bg);
+  }
+  .more-options-dropdown{right:0;min-width:230px;}
+
   .btn-glossy-blue{
     background:linear-gradient(180deg, #6FC3F0 0%, #3E9DDD 55%, #2E86C9 100%);
     border:1px solid #2A79B8;color:#fff;font-weight:700;
@@ -299,51 +330,59 @@
       <button class="ghost" id="jumpMenuBtn">📍 SECTIONS</button>
       <div id="jumpMenuDropdown" class="jump-dropdown" hidden></div>
     </div>
-    <div class="toolbar">
+    <div class="toolbar toolbar-lite">
       <div class="toolgroup">
-        <span class="glabel">Transpose</span>
-        <button class="stepbtn" id="transDown">−</button>
-        <span class="readout" id="transReadout">0</span>
-        <button class="stepbtn" id="transUp">+</button>
+        <span class="glabel">Font</span>
+        <button class="stepbtn" id="fontDown">−1</button>
+        <button class="stepbtn" id="fontUp">+1</button>
       </div>
-      <label class="toggle"><input type="checkbox" id="flatsToggle"> Prefer flats</label>
       <div class="toolgroup">
-        <span class="glabel">Display</span>
-        <select id="displayMode" style="width:auto;">
-          <option value="above">Chords above</option>
+        <span class="glabel">Chords</span>
+        <select id="displayMode">
+          <option value="above">Above</option>
           <option value="inline" selected>Inline</option>
         </select>
       </div>
       <div class="toolgroup">
-        <span class="glabel">Text size</span>
-        <button class="stepbtn" id="fontDown">A−</button>
-        <button class="stepbtn" id="fontUp">A+</button>
+        <span class="glabel">Transpose</span>
+        <button class="stepbtn" id="transDown">−1</button>
+        <span class="readout" id="transReadout">0</span>
+        <button class="stepbtn" id="transUp">+1</button>
       </div>
-      <div class="toolgroup">
-        <span class="glabel">Tempo</span>
-        <input type="number" id="bpmInput" min="20" max="300" value="80" style="width:56px;padding:6px 8px;">
-        <span style="font-size:12px;color:var(--ink-soft);">BPM</span>
-        <span class="beat-dot" id="beatDot" title="Beat pulse — confirms the engine is running"></span>
-      </div>
-      <div class="toolgroup">
-        <span class="glabel">Beats / line</span>
-        <button class="stepbtn" id="beatsDown">−</button>
-        <span class="readout" id="beatsReadout">4</span>
-        <button class="stepbtn" id="beatsUp">+</button>
-      </div>
-      <label class="toggle"><input type="checkbox" id="manualSpeedToggle"> Manual speed</label>
-      <div class="toolgroup" id="manualSpeedGroup" style="display:none;">
-        <button class="stepbtn" id="speedDown">−</button>
-        <span class="readout" id="speedReadout">35</span>
-        <button class="stepbtn" id="speedUp">+</button>
-        <input type="range" id="speedSlider" min="10" max="150" value="35">
-      </div>
-      <button id="playBtn">▶ Play</button>
+      <button class="tb-primary" id="playBtn">▶ Autoscroll</button>
       <button class="ghost" id="topBtn">Top</button>
       <div class="spacer"></div>
+      <span id="liveCodeBadge" class="live-code-badge" hidden title="Tap to show the QR code / join code again">
+        🔴 <span id="liveCodeBadgeText"></span>
+      </span>
       <button id="goLiveBtn">📡 Go Live</button>
       <button class="danger" id="stopLiveBtn" hidden>⏹ Stop Live</button>
-      <button class="ghost" id="editFromPlayerBtn">Edit song</button>
+      <div style="position:relative;">
+        <button class="ghost" id="moreOptionsBtn">•••</button>
+        <div id="moreOptionsDropdown" class="jump-dropdown more-options-dropdown" hidden>
+          <label class="toggle" style="padding:8px 10px;"><input type="checkbox" id="flatsToggle"> Prefer flats</label>
+          <div class="toolgroup" style="padding:6px 10px;">
+            <span class="glabel">Tempo</span>
+            <input type="number" id="bpmInput" min="20" max="300" value="80" style="width:56px;padding:6px 8px;">
+            <span style="font-size:12px;color:var(--ink-soft);">BPM</span>
+            <span class="beat-dot" id="beatDot" title="Beat pulse — confirms the engine is running"></span>
+          </div>
+          <div class="toolgroup" style="padding:6px 10px;">
+            <span class="glabel">Beats / line</span>
+            <button class="stepbtn" id="beatsDown">−</button>
+            <span class="readout" id="beatsReadout">4</span>
+            <button class="stepbtn" id="beatsUp">+</button>
+          </div>
+          <label class="toggle" style="padding:8px 10px;"><input type="checkbox" id="manualSpeedToggle"> Manual speed</label>
+          <div class="toolgroup" id="manualSpeedGroup" style="display:none;padding:6px 10px;">
+            <button class="stepbtn" id="speedDown">−</button>
+            <span class="readout" id="speedReadout">35</span>
+            <button class="stepbtn" id="speedUp">+</button>
+            <input type="range" id="speedSlider" min="10" max="150" value="35">
+          </div>
+          <button class="ghost" id="editFromPlayerBtn" style="width:calc(100% - 12px);margin:6px;">Edit song</button>
+        </div>
+      </div>
       <button class="btn-glossy-blue" id="backToLibraryBtn">Library 🎵</button>
     </div>
     <div id="setlistContext" class="setlist-context" hidden>
@@ -369,7 +408,7 @@
     </div>
   </section>
 
-  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-21-a (hide unmatched section btns, glossy library btn))</span></footer>
+  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-21-b (lighter toolbar, persistent live code))</span></footer>
 </div>
 <div id="customContextMenu" hidden></div>
 
@@ -819,6 +858,8 @@
     });
   }
 
+  let currentJoinUrl = null;
+
   function showLiveModal(code, joinUrl){
     const modal = document.getElementById('liveModal');
     document.getElementById('liveCodeText').textContent = code;
@@ -838,19 +879,29 @@
     if(!fbDb){ alert('Live requires an internet connection (Firebase could not load).'); return; }
     if(!currentSongId){ alert('Play a song first, then go live.'); return; }
     liveSessionCode = generateSessionCode();
-    const joinUrl = location.origin + location.pathname + '?join=' + liveSessionCode;
-    showLiveModal(liveSessionCode, joinUrl);
+    currentJoinUrl = location.origin + location.pathname + '?join=' + liveSessionCode;
+    showLiveModal(liveSessionCode, currentJoinUrl);
     document.getElementById('goLiveBtn').hidden = true;
     document.getElementById('stopLiveBtn').hidden = false;
+    // Stays visible the whole time you're live — the code doesn't expire
+    // and is still joinable even if the modal gets closed or someone
+    // reconnects later, as long as you haven't hit Stop Live.
+    document.getElementById('liveCodeBadgeText').textContent = liveSessionCode;
+    document.getElementById('liveCodeBadge').hidden = false;
     await broadcastState(true);
   }
   function stopLive(){
     if(liveSessionCode && fbDb) fbDb.ref('sessions/' + liveSessionCode).remove();
     liveSessionCode = null;
+    currentJoinUrl = null;
     hideLiveModal();
     document.getElementById('goLiveBtn').hidden = false;
     document.getElementById('stopLiveBtn').hidden = true;
+    document.getElementById('liveCodeBadge').hidden = true;
   }
+  document.getElementById('liveCodeBadge').addEventListener('click', () => {
+    if(liveSessionCode && currentJoinUrl) showLiveModal(liveSessionCode, currentJoinUrl);
+  });
 
   // ---- follower / join mode ----
   let followRenderKey = '';
@@ -1584,7 +1635,15 @@ Was blind but now I see`;
     e.stopPropagation();
     toggleJumpMenu();
   });
-  document.addEventListener('click', () => { document.getElementById('jumpMenuDropdown').hidden = true; });
+  document.addEventListener('click', () => {
+    document.getElementById('jumpMenuDropdown').hidden = true;
+    document.getElementById('moreOptionsDropdown').hidden = true;
+  });
+  document.getElementById('moreOptionsBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.getElementById('moreOptionsDropdown').hidden = !document.getElementById('moreOptionsDropdown').hidden;
+  });
+  document.getElementById('moreOptionsDropdown').addEventListener('click', (e) => { e.stopPropagation(); });
 
   // ---------- Fixed quick-jump section buttons ----------
   const QSEC_MATCHERS = {
