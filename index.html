@@ -444,7 +444,7 @@
     </div>
   </section>
 
-  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-21-j (dash/pipe chord detection fix))</span></footer>
+  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-21-k (fixed G2/A5/C4 power-chord shorthand))</span></footer>
 </div>
 <div id="customContextMenu" hidden></div>
 <div id="dropdownBackdrop" class="dropdown-backdrop" hidden></div>
@@ -507,7 +507,7 @@
   <div id="followScrollContainer" style="flex:1;min-height:0;overflow-y:auto;overflow-x:auto;padding:36px 24px 60vh;">
     <div id="followSongContent" style="font-family:'IBM Plex Mono',monospace;font-size:20px;line-height:2.05;white-space:pre;width:max-content;min-width:100%;"></div>
   </div>
-  <div style="position:fixed;bottom:4px;right:8px;font-size:10px;color:var(--ink-soft);opacity:.55;pointer-events:none;">build 2026-07-21-j</div>
+  <div style="position:fixed;bottom:4px;right:8px;font-size:10px;color:var(--ink-soft);opacity:.55;pointer-events:none;">build 2026-07-21-k</div>
 </section>
 
 <!-- Live sync: Firebase Realtime Database + client-side QR code generation -->
@@ -521,7 +521,7 @@
   // Suffix is built from composable pieces (quality, extension number, sus,
   // add, alterations, dim/aug) rather than one fixed list, so combinations
   // like B7sus, C9sus4, Dm7b5, Eadd9 are recognized, not just single suffixes.
-  const CHORD_RE = /^[A-G](#|b)?(?:M|maj|min|m)?(?:6|7|9|11|13|69)?(?:sus4|sus2|sus)?(?:add\d{1,2})?(?:[#b](?:5|9|11|13))*(?:dim7?|aug)?(\/[A-G](#|b)?)?$/;
+  const CHORD_RE = /^[A-G](#|b)?(?:M|maj|min|m)?(?:2|4|5|6|7|9|11|13|69)?(?:sus4|sus2|sus)?(?:add\d{1,2})?(?:[#b](?:5|9|11|13))*(?:dim7?|aug)?(\/[A-G](#|b)?)?$/;
   const EXTRA_RE = /^(N\.?C\.?|NC|x\d+|\(\d+x\)|%|\|+|-+|\.+|\/)$/i;
   const SECTION_RE = /^(verse|chorus|pre-?chorus|bridge|intro|outro|interlude|tag|refrain|ending|coda|hook|instrumental)\s*\d*\s*[:.\-]?$/i;
   const SHARPS = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
