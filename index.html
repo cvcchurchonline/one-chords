@@ -92,7 +92,7 @@
 
   .quick-section-bar{
     display:flex;gap:8px;padding:10px 32px;overflow-x:auto;background:var(--paper);
-    border-bottom:1px solid var(--rule);
+    border-bottom:1px solid var(--rule);flex-shrink:0;min-height:44px;box-sizing:border-box;
   }
   .qsec-btn{
     flex:0 0 auto;font-family:'Inter',sans-serif;font-weight:800;font-size:12px;letter-spacing:0.03em;
@@ -209,7 +209,7 @@
   .picker-row .t{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
   /* PLAYER toolbar (unchanged look) */
-  .toolbar{display:flex;flex-wrap:wrap;gap:16px;align-items:center;padding:14px 32px;border-bottom:1px solid var(--rule);background:var(--card);position:sticky;top:0;z-index:5;}
+  .toolbar{display:flex;flex-wrap:wrap;gap:16px;align-items:center;padding:14px 32px;border-bottom:1px solid var(--rule);background:var(--card);position:sticky;top:0;z-index:5;flex-shrink:0;}
   .toolgroup{display:flex;align-items:center;gap:6px;}
   .toolgroup .glabel{font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-soft);margin-right:4px;font-weight:600;}
   .stepbtn{width:30px;height:30px;padding:0;border-radius:6px;font-size:15px;line-height:1;}
@@ -222,9 +222,9 @@
   #playBtn.playing:hover{background:#873a30;}
   .beat-dot{width:11px;height:11px;border-radius:50%;background:var(--rule);display:inline-block;margin-left:2px;transition:background .07s ease, transform .07s ease;}
   .beat-dot.pulse{background:var(--gold);transform:scale(1.4);}
-  .setlist-context{padding:7px 32px;background:transparent;border-bottom:1px solid var(--rule);color:var(--chord);font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px;}
+  .setlist-context{padding:7px 32px;background:transparent;border-bottom:1px solid var(--rule);color:var(--chord);font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px;flex-shrink:0;}
   .setlist-context .spacer{flex:1;}
-  .song-title-bar{padding:12px 32px 10px;background:var(--card);border-bottom:1px solid var(--rule);}
+  .song-title-bar{padding:12px 32px 10px;background:var(--card);border-bottom:1px solid var(--rule);flex-shrink:0;}
   .song-title-bar span{font-family:'Fraunces',serif;font-style:italic;font-weight:700;font-size:20px;color:var(--ink);}
 
   #scrollContainer{flex:1;min-height:0;overflow-y:auto;overflow-x:auto;padding:36px 40px 60vh;scroll-behavior:auto;}
@@ -383,8 +383,8 @@
           <div class="toolgroup" style="padding:8px 10px;">
             <span class="glabel">Chords</span>
             <select id="displayMode">
-              <option value="above">Above</option>
-              <option value="inline" selected>Inline</option>
+              <option value="above" selected>Above</option>
+              <option value="inline">Inline</option>
             </select>
           </div>
           <label class="toggle" style="padding:8px 10px;"><input type="checkbox" id="flatsToggle"> Prefer flats</label>
@@ -441,7 +441,7 @@
     </div>
   </section>
 
-  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-21-e (font selector, chip buttons, appearance menu))</span></footer>
+  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-21-g (PREVIEW: follower always wraps))</span></footer>
 </div>
 <div id="customContextMenu" hidden></div>
 
@@ -489,6 +489,11 @@
   <div class="toolbar" style="justify-content:space-between;">
     <div class="toolgroup"><span class="live-dot"></span><strong style="margin-left:6px;">LIVE</strong></div>
     <div id="followTitle" class="song-title-bar" style="border:none;padding:0;background:transparent;flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-family:'Fraunces',serif;font-style:italic;font-weight:700;font-size:18px;color:var(--ink);"></div>
+    <div class="toolgroup">
+      <span class="glabel">Font</span>
+      <button class="stepbtn" id="followFontDown">A−</button>
+      <button class="stepbtn" id="followFontUp">A+</button>
+    </div>
     <label class="theme-switch theme-switch-follower" id="followThemeToggle">
       <span class="theme-switch-label">🌙</span>
       <span class="switch-track"><span class="switch-thumb"></span></span>
@@ -946,6 +951,24 @@
 
   // ---- follower / join mode ----
   let followRenderKey = '';
+  let followFontSize = 26;
+  let followDisplayMode = 'above';
+
+  function applyFollowFontSize(){
+    // PREVIEW: follower content always wraps now (see renderSong override
+    // below), so shrink-to-fit isn't needed — wrapping already prevents
+    // overflow, so we just apply the chosen size directly.
+    document.getElementById('followSongContent').style.fontSize = followFontSize + 'px';
+  }
+  document.getElementById('followFontUp').addEventListener('click', () => {
+    followFontSize = Math.min(followFontSize + 2, 40);
+    applyFollowFontSize();
+  });
+  document.getElementById('followFontDown').addEventListener('click', () => {
+    followFontSize = Math.max(followFontSize - 2, 12);
+    applyFollowFontSize();
+  });
+
   function enterFollowMode(code){
     document.getElementById('app').style.display = 'none';
     const followPanel = document.getElementById('followPanel');
@@ -966,17 +989,24 @@
         return;
       }
       document.getElementById('followTitle').innerHTML = state.title || 'Untitled song';
+      followDisplayMode = state.displayMode;
       const key = state.text + '|' + state.format + '|' + state.semitones + '|' + state.preferFlats + '|' + state.displayMode + '|' + state.songFont;
       if(key !== followRenderKey){
         followRenderKey = key;
         songFont = state.songFont || 'inter';
         const parsed = parseSong(state.text, state.format);
         renderSong(parsed, state.semitones, state.preferFlats, state.displayMode, 'followSongContent');
-        if(state.displayMode === 'above'){
-          fitTextToWidth('followSongContent', 'followScrollContainer', 26, 14);
-        } else {
-          document.getElementById('followSongContent').style.fontSize = '20px';
-        }
+        // PREVIEW: force wrapping regardless of chord display mode — trades
+        // exact chord-above column alignment on long lines for guaranteed
+        // no-side-scroll readability. Only overrides the follower's own
+        // screen; the host and its own alignment are untouched.
+        const followEl = document.getElementById('followSongContent');
+        followEl.style.whiteSpace = 'pre-wrap';
+        followEl.style.width = '100%';
+        followEl.style.minWidth = '';
+        // Font size is intentionally NOT taken from the host here — each
+        // viewer controls their own size independently via A−/A+.
+        applyFollowFontSize();
       }
       const el = document.getElementById('followScrollContainer');
       requestAnimationFrame(() => {
@@ -1093,7 +1123,7 @@
   let parsedSong = [];
   let semitones = 0;
   let preferFlats = false;
-  let displayMode = 'inline';
+  let displayMode = 'above';
   let fontSize = 20;
   let songFont = 'inter';
 
@@ -1170,10 +1200,7 @@
   window.addEventListener('resize', () => {
     if(!document.getElementById('viewerPanel').hidden){ applySongFontSize(); refreshLineHeightCache(); }
     if(!document.getElementById('followPanel').hidden){
-      const followEl = document.getElementById('followSongContent');
-      if(followEl && followEl.style.whiteSpace === 'pre'){
-        fitTextToWidth('followSongContent', 'followScrollContainer', 26, 14);
-      }
+      applyFollowFontSize();
     }
   });
 
@@ -1571,6 +1598,10 @@ Was blind but now I see`;
   });
 
   async function loadSongIntoPlayer(song){
+    // Save whatever transpose the PREVIOUS song was at before switching away
+    // from it — this is what makes transpose persist correctly when moving
+    // between songs in a setlist, not just when leaving to the Library.
+    await persistCurrentTranspose();
     currentSongId = song.id;
     parsedSong = parseSong(song.text, song.format);
     semitones = song.transpose || 0;
@@ -1999,6 +2030,7 @@ Was blind but now I see`;
   if(joinCode){
     enterFollowMode(joinCode.toUpperCase());
   } else {
+    closeScanModal();
     showView('libraryPanel');
     loadLibrary();
     startCloudLibrarySync();
