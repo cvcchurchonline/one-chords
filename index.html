@@ -78,9 +78,12 @@
   #customContextMenu button:hover{background:var(--paper);color:var(--ink);}
 
   .jump-dropdown{
-    position:absolute;top:calc(100% + 6px);right:0;z-index:60;
-    background:var(--card);border:1px solid var(--rule);border-radius:10px;
-    box-shadow:0 8px 24px rgba(0,0,0,.2);padding:6px;min-width:190px;max-height:340px;overflow-y:auto;
+    position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:200;
+    background:var(--card);border:1px solid var(--rule);border-radius:12px;
+    box-shadow:0 16px 48px rgba(0,0,0,.35);padding:8px;min-width:220px;max-width:90vw;max-height:80vh;overflow-y:auto;
+  }
+  .dropdown-backdrop{
+    position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:190;
   }
   .jump-dropdown button{
     display:block;width:100%;text-align:left;padding:9px 12px;border:none;background:transparent;
@@ -136,7 +139,7 @@
     font-weight:600;font-size:12.5px;color:var(--chord);cursor:pointer;padding:4px 2px;
     background:transparent;border:none;
   }
-  .more-options-dropdown{right:0;min-width:240px;}
+  .more-options-dropdown{min-width:250px;}
 
   .btn-chip{
     background:transparent;border-radius:9px;font-weight:700;font-size:13px;
@@ -441,9 +444,10 @@
     </div>
   </section>
 
-  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-21-h (disable pinch-zoom, follower build indicator))</span></footer>
+  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-21-i (centered popups, fixes tablet cutoff))</span></footer>
 </div>
 <div id="customContextMenu" hidden></div>
+<div id="dropdownBackdrop" class="dropdown-backdrop" hidden></div>
 
 <!-- LIVE HOST MODAL -->
 <div id="liveModal" class="live-modal" hidden>
@@ -503,7 +507,7 @@
   <div id="followScrollContainer" style="flex:1;min-height:0;overflow-y:auto;overflow-x:auto;padding:36px 24px 60vh;">
     <div id="followSongContent" style="font-family:'IBM Plex Mono',monospace;font-size:20px;line-height:2.05;white-space:pre;width:max-content;min-width:100%;"></div>
   </div>
-  <div style="position:fixed;bottom:4px;right:8px;font-size:10px;color:var(--ink-soft);opacity:.55;pointer-events:none;">build 2026-07-21-h</div>
+  <div style="position:fixed;bottom:4px;right:8px;font-size:10px;color:var(--ink-soft);opacity:.55;pointer-events:none;">build 2026-07-21-i</div>
 </section>
 
 <!-- Live sync: Firebase Realtime Database + client-side QR code generation -->
@@ -1694,9 +1698,16 @@ Was blind but now I see`;
     }
   }
 
+  function syncDropdownBackdrop(){
+    const anyOpen = !document.getElementById('jumpMenuDropdown').hidden ||
+                    !document.getElementById('moreOptionsDropdown').hidden ||
+                    !document.getElementById('appearanceDropdown').hidden;
+    document.getElementById('dropdownBackdrop').hidden = !anyOpen;
+  }
+
   function toggleJumpMenu(){
     const dropdown = document.getElementById('jumpMenuDropdown');
-    if(!dropdown.hidden){ dropdown.hidden = true; return; }
+    if(!dropdown.hidden){ dropdown.hidden = true; syncDropdownBackdrop(); return; }
     const sections = getSongSections();
     dropdown.innerHTML = '';
     if(sections.length === 0){
@@ -1712,6 +1723,7 @@ Was blind but now I see`;
       });
     }
     dropdown.hidden = false;
+    syncDropdownBackdrop();
   }
   document.getElementById('jumpMenuBtn').addEventListener('click', (e) => {
     e.stopPropagation();
@@ -1721,17 +1733,26 @@ Was blind but now I see`;
     document.getElementById('jumpMenuDropdown').hidden = true;
     document.getElementById('moreOptionsDropdown').hidden = true;
     document.getElementById('appearanceDropdown').hidden = true;
+    syncDropdownBackdrop();
+  });
+  document.getElementById('dropdownBackdrop').addEventListener('click', () => {
+    document.getElementById('jumpMenuDropdown').hidden = true;
+    document.getElementById('moreOptionsDropdown').hidden = true;
+    document.getElementById('appearanceDropdown').hidden = true;
+    syncDropdownBackdrop();
   });
   document.getElementById('moreOptionsBtn').addEventListener('click', (e) => {
     e.stopPropagation();
     document.getElementById('appearanceDropdown').hidden = true;
     document.getElementById('moreOptionsDropdown').hidden = !document.getElementById('moreOptionsDropdown').hidden;
+    syncDropdownBackdrop();
   });
   document.getElementById('moreOptionsDropdown').addEventListener('click', (e) => { e.stopPropagation(); });
   document.getElementById('appearanceBtn').addEventListener('click', (e) => {
     e.stopPropagation();
     document.getElementById('moreOptionsDropdown').hidden = true;
     document.getElementById('appearanceDropdown').hidden = !document.getElementById('appearanceDropdown').hidden;
+    syncDropdownBackdrop();
   });
   document.getElementById('appearanceDropdown').addEventListener('click', (e) => { e.stopPropagation(); });
   document.getElementById('fontFamilySelect').addEventListener('change', (e) => {
