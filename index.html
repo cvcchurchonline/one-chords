@@ -455,7 +455,7 @@
     </div>
   </section>
 
-  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-21-l (Add to Home Screen prompt))</span></footer>
+  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-21-m (fixed follower wrap - chordrow override))</span></footer>
 </div>
 <div id="customContextMenu" hidden></div>
 <div id="dropdownBackdrop" class="dropdown-backdrop" hidden></div>
@@ -524,7 +524,7 @@
   <div id="followScrollContainer" style="flex:1;min-height:0;overflow-y:auto;overflow-x:auto;padding:36px 24px 60vh;">
     <div id="followSongContent" style="font-family:'IBM Plex Mono',monospace;font-size:20px;line-height:2.05;white-space:pre;width:max-content;min-width:100%;"></div>
   </div>
-  <div style="position:fixed;bottom:4px;right:8px;font-size:10px;color:var(--ink-soft);opacity:.55;pointer-events:none;">build 2026-07-21-l</div>
+  <div style="position:fixed;bottom:4px;right:8px;font-size:10px;color:var(--ink-soft);opacity:.55;pointer-events:none;">build 2026-07-21-m</div>
 </section>
 
 <!-- Live sync: Firebase Realtime Database + client-side QR code generation -->
@@ -1072,6 +1072,12 @@
         followEl.style.whiteSpace = 'pre-wrap';
         followEl.style.width = '100%';
         followEl.style.minWidth = '';
+        // The chordrow/lyricrow elements inside each line have their own
+        // explicit white-space:pre, which silently overrides the setting
+        // above unless also overridden here directly.
+        followEl.querySelectorAll('.chordrow, .lyricrow').forEach((el) => {
+          el.style.whiteSpace = 'pre-wrap';
+        });
         // Font size is intentionally NOT taken from the host here — each
         // viewer controls their own size independently via A−/A+.
         applyFollowFontSize();
