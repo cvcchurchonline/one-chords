@@ -444,7 +444,7 @@
     </div>
   </section>
 
-  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-21-i (centered popups, fixes tablet cutoff))</span></footer>
+  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-21-j (dash/pipe chord detection fix))</span></footer>
 </div>
 <div id="customContextMenu" hidden></div>
 <div id="dropdownBackdrop" class="dropdown-backdrop" hidden></div>
@@ -507,7 +507,7 @@
   <div id="followScrollContainer" style="flex:1;min-height:0;overflow-y:auto;overflow-x:auto;padding:36px 24px 60vh;">
     <div id="followSongContent" style="font-family:'IBM Plex Mono',monospace;font-size:20px;line-height:2.05;white-space:pre;width:max-content;min-width:100%;"></div>
   </div>
-  <div style="position:fixed;bottom:4px;right:8px;font-size:10px;color:var(--ink-soft);opacity:.55;pointer-events:none;">build 2026-07-21-i</div>
+  <div style="position:fixed;bottom:4px;right:8px;font-size:10px;color:var(--ink-soft);opacity:.55;pointer-events:none;">build 2026-07-21-j</div>
 </section>
 
 <!-- Live sync: Firebase Realtime Database + client-side QR code generation -->
@@ -538,8 +538,34 @@
     if(!trimmed || isSectionLabel(trimmed)) return false;
     const tokens = trimmed.split(/\s+/);
     if(tokens.length===0) return false;
-    const hasRealChord = tokens.some(isChordToken);
-    return hasRealChord && tokens.every(isChordLineToken);
+    if(tokens.some(isChordToken) && tokens.every(isChordLineToken)) return true;
+    // Fallback: chords glued directly to a dash/pipe with no space, like
+    // "G-C-D" or "|G|C|D|" — split on those too and check again. Still
+    // requires every resulting fragment to be a real chord, so genuine
+    // lyric lines with hyphenated words (like "self-control") correctly
+    // keep failing this check.
+    const loose = trimmed.split(/[\s\-|]+/).filter(Boolean);
+    return loose.length>0 && loose.every(isChordToken);
+  }
+
+  // Splits a run like "G-C-D" or "G|C|D" into individual {chord, index}
+  // entries (index relative to the start of `raw` within its line), for
+  // chords typed with no space around the separating dash/pipe. Returns
+  // null if `raw` isn't actually a clean compound-chord run, so callers can
+  // fall back to treating it as a single token (e.g. "N.C." or a lone "-").
+  function expandCompoundChordRun(raw){
+    if(!/[-|]/.test(raw)) return null;
+    const parts = raw.split(/([-|]+)/);
+    const out = [];
+    let offset = 0;
+    for(const part of parts){
+      if(part === ''){ continue; }
+      if(/^[-|]+$/.test(part)){ offset += part.length; continue; }
+      if(!isChordToken(part)) return null;
+      out.push({chord: part, offset});
+      offset += part.length;
+    }
+    return out.length > 1 ? out : null;
   }
 
   function transposeNote(note, semitones, preferFlats){
@@ -591,7 +617,14 @@
   function buildSegmentsFromChordAbove(chordLine, lyricLine){
     const positions = [];
     const re = /\S+/g; let m;
-    while((m = re.exec(chordLine))) positions.push({chord: m[0], index: m.index});
+    while((m = re.exec(chordLine))){
+      const expanded = isChordToken(m[0]) ? null : expandCompoundChordRun(m[0]);
+      if(expanded){
+        expanded.forEach((e) => positions.push({chord: e.chord, index: m.index + e.offset}));
+      } else {
+        positions.push({chord: m[0], index: m.index});
+      }
+    }
     if(positions.length===0) return [{chord:null, text:lyricLine}];
     const segments = [];
     for(let k=0;k<positions.length;k++){
@@ -605,7 +638,20 @@
 
   function buildChordOnlySegments(chordLine){
     const parts = chordLine.split(/(\s+)/);
-    return parts.filter(p=>p.length>0).map(p => /\S/.test(p) ? {chord:p, text:''} : {chord:null, text:p});
+    const out = [];
+    parts.filter(p=>p.length>0).forEach((p) => {
+      if(!/\S/.test(p)){ out.push({chord:null, text:p}); return; }
+      const expanded = isChordToken(p) ? null : expandCompoundChordRun(p);
+      if(expanded){
+        expanded.forEach((e, i) => {
+          if(i>0) out.push({chord:null, text:''});
+          out.push({chord:e.chord, text:''});
+        });
+      } else {
+        out.push({chord:p, text:''});
+      }
+    });
+    return out;
   }
 
   function detectFormat(text){ return /\[[^\]]+\]/.test(text) ? 'chordpro' : 'above'; }
