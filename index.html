@@ -371,7 +371,6 @@
   <section id="viewerPanel" class="view" style="padding:0;display:flex;flex-direction:column;" hidden>
     <div id="jumpMenuAnchor" style="position:fixed;top:12px;right:12px;z-index:80;">
       <button class="ghost" id="jumpMenuBtn">📍 SECTIONS</button>
-      <div id="jumpMenuDropdown" class="jump-dropdown" hidden></div>
     </div>
     <div class="toolbar toolbar-lite">
       <div class="toolgroup">
@@ -397,51 +396,10 @@
 
       <div style="position:relative;">
         <button class="tb-light" id="appearanceBtn">⚙</button>
-        <div id="appearanceDropdown" class="jump-dropdown more-options-dropdown" hidden>
-          <div class="toolgroup" style="padding:8px 10px;">
-            <span class="glabel">Font</span>
-            <select id="fontFamilySelect">
-              <option value="inter" selected>Inter</option>
-              <option value="roboto">Roboto</option>
-              <option value="opensans">Open Sans</option>
-              <option value="system">SF Pro (System)</option>
-            </select>
-          </div>
-          <div class="toolgroup" style="padding:8px 10px;">
-            <span class="glabel">Chords</span>
-            <select id="displayMode">
-              <option value="above" selected>Above</option>
-              <option value="inline">Inline</option>
-            </select>
-          </div>
-          <label class="toggle" style="padding:8px 10px;"><input type="checkbox" id="flatsToggle"> Prefer flats</label>
-        </div>
       </div>
 
       <div style="position:relative;">
         <button class="tb-light" id="moreOptionsBtn">•••</button>
-        <div id="moreOptionsDropdown" class="jump-dropdown more-options-dropdown" hidden>
-          <div class="toolgroup" style="padding:6px 10px;">
-            <span class="glabel">Tempo</span>
-            <input type="number" id="bpmInput" min="20" max="300" value="80" style="width:56px;padding:6px 8px;">
-            <span style="font-size:12px;color:var(--ink-soft);">BPM</span>
-            <span class="beat-dot" id="beatDot" title="Beat pulse — confirms the engine is running"></span>
-          </div>
-          <div class="toolgroup" style="padding:6px 10px;">
-            <span class="glabel">Beats / line</span>
-            <button class="stepbtn" id="beatsDown">−</button>
-            <span class="readout" id="beatsReadout">4</span>
-            <button class="stepbtn" id="beatsUp">+</button>
-          </div>
-          <label class="toggle" style="padding:8px 10px;"><input type="checkbox" id="manualSpeedToggle"> Manual speed</label>
-          <div class="toolgroup" id="manualSpeedGroup" style="display:none;padding:6px 10px;">
-            <button class="stepbtn" id="speedDown">−</button>
-            <span class="readout" id="speedReadout">35</span>
-            <button class="stepbtn" id="speedUp">+</button>
-            <input type="range" id="speedSlider" min="10" max="150" value="35">
-          </div>
-          <button class="ghost" id="editFromPlayerBtn" style="width:calc(100% - 12px);margin:6px;">Edit song</button>
-        </div>
       </div>
       <button class="btn-chip btn-chip-green" id="backToLibraryBtn">Library</button>
     </div>
@@ -468,10 +426,59 @@
     </div>
   </section>
 
-  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-21-q (popup: light color + fixed checkbox tap target))</span></footer>
+  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-21-r (fixed popup stacking-context trap))</span></footer>
 </div>
 <div id="customContextMenu" hidden></div>
 <div id="dropdownBackdrop" class="dropdown-backdrop" hidden></div>
+
+<!-- Popups live here, outside the toolbar's own stacking layer, so their
+     z-index is compared directly against the page instead of being trapped
+     under the dark backdrop by an ancestor's separate stacking context. -->
+<div id="jumpMenuDropdown" class="jump-dropdown" hidden></div>
+
+<div id="appearanceDropdown" class="jump-dropdown more-options-dropdown" hidden>
+  <div class="toolgroup" style="padding:8px 10px;">
+    <span class="glabel">Font</span>
+    <select id="fontFamilySelect">
+      <option value="inter" selected>Inter</option>
+      <option value="roboto">Roboto</option>
+      <option value="opensans">Open Sans</option>
+      <option value="system">SF Pro (System)</option>
+    </select>
+  </div>
+  <div class="toolgroup" style="padding:8px 10px;">
+    <span class="glabel">Chords</span>
+    <select id="displayMode">
+      <option value="above" selected>Above</option>
+      <option value="inline">Inline</option>
+    </select>
+  </div>
+  <label class="toggle" style="padding:8px 10px;"><input type="checkbox" id="flatsToggle"> Prefer flats</label>
+</div>
+
+<div id="moreOptionsDropdown" class="jump-dropdown more-options-dropdown" hidden>
+  <div class="toolgroup" style="padding:6px 10px;">
+    <span class="glabel">Tempo</span>
+    <input type="number" id="bpmInput" min="20" max="300" value="80" style="width:56px;padding:6px 8px;">
+    <span style="font-size:12px;color:var(--ink-soft);">BPM</span>
+    <span class="beat-dot" id="beatDot" title="Beat pulse — confirms the engine is running"></span>
+  </div>
+  <div class="toolgroup" style="padding:6px 10px;">
+    <span class="glabel">Beats / line</span>
+    <button class="stepbtn" id="beatsDown">−</button>
+    <span class="readout" id="beatsReadout">4</span>
+    <button class="stepbtn" id="beatsUp">+</button>
+  </div>
+  <label class="toggle" style="padding:8px 10px;"><input type="checkbox" id="manualSpeedToggle"> Manual speed</label>
+  <div class="toolgroup" id="manualSpeedGroup" style="display:none;padding:6px 10px;">
+    <button class="stepbtn" id="speedDown">−</button>
+    <span class="readout" id="speedReadout">35</span>
+    <button class="stepbtn" id="speedUp">+</button>
+    <input type="range" id="speedSlider" min="10" max="150" value="35">
+  </div>
+  <button class="ghost" id="editFromPlayerBtn" style="width:calc(100% - 12px);margin:6px;">Edit song</button>
+</div>
+
 
 <!-- LIVE HOST MODAL -->
 <div id="liveModal" class="live-modal" hidden>
@@ -537,7 +544,7 @@
   <div id="followScrollContainer" style="flex:1;min-height:0;overflow-y:auto;overflow-x:auto;padding:36px 24px 60vh;">
     <div id="followSongContent" style="font-family:'IBM Plex Mono',monospace;font-size:20px;line-height:2.05;white-space:pre;width:max-content;min-width:100%;"></div>
   </div>
-  <div style="position:fixed;bottom:4px;right:8px;font-size:10px;color:var(--ink-soft);opacity:.55;pointer-events:none;">build 2026-07-21-q</div>
+  <div style="position:fixed;bottom:4px;right:8px;font-size:10px;color:var(--ink-soft);opacity:.55;pointer-events:none;">build 2026-07-21-r</div>
 </section>
 
 <!-- Live sync: Firebase Realtime Database + client-side QR code generation -->
