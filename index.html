@@ -25,6 +25,8 @@
   }
   body.dark-mode .live-qr-box{background:#fff;} /* QR codes need a light backing to stay scannable */
   *{box-sizing:border-box;}
+  html{touch-action:manipulation;}
+  button, select, input{touch-action:manipulation;}
   html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;}
   body{background-image:repeating-linear-gradient(to bottom, transparent 0 39px, var(--rule) 39px 40px);background-attachment:local;}
   #app{max-width:960px;margin:0 auto;min-height:100vh;background:var(--card);box-shadow:0 0 0 1px var(--rule);display:flex;flex-direction:column;}
@@ -79,11 +81,11 @@
 
   .jump-dropdown{
     position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:200;
-    background:var(--card);border:1px solid var(--rule);border-radius:12px;
-    box-shadow:0 16px 48px rgba(0,0,0,.35);padding:8px;min-width:220px;max-width:90vw;max-height:80vh;overflow-y:auto;
+    background:#FFFDF8;color:#2A241E;border:1px solid #D8CCA9;border-radius:12px;
+    box-shadow:0 16px 48px rgba(0,0,0,.4);padding:8px;min-width:220px;max-width:90vw;max-height:80vh;overflow-y:auto;
   }
   .dropdown-backdrop{
-    position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:190;
+    position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:190;
   }
   .install-banner{
     display:flex;align-items:center;gap:10px;padding:10px 32px;background:var(--chord-bg);
@@ -91,12 +93,23 @@
   }
   @media (max-width:640px){ .install-banner{padding:10px 14px;} }
   .jump-dropdown button{
-    display:block;width:100%;text-align:left;padding:9px 12px;border:none;background:transparent;
-    border-radius:6px;font-weight:700;font-size:13px;color:var(--ink);letter-spacing:0.02em;
+    display:block;width:100%;text-align:left;padding:10px 12px;border:none;background:transparent;
+    border-radius:6px;font-weight:700;font-size:13px;color:#2A241E;letter-spacing:0.02em;
     text-transform:uppercase;
   }
-  .jump-dropdown button:hover{background:var(--paper);}
-  .jump-dropdown .jump-empty{padding:10px 12px;color:var(--ink-soft);font-size:12.5px;font-weight:500;line-height:1.5;}
+  .jump-dropdown button:hover{background:#F0E9D6;}
+  .jump-dropdown .jump-empty{padding:10px 12px;color:#7A7062;font-size:12.5px;font-weight:500;line-height:1.5;}
+  .jump-dropdown .glabel{color:#7A7062;}
+  .jump-dropdown select, .jump-dropdown input[type=number]{
+    background:#F6F1E3;color:#2A241E;border:1px solid #D8CCA9;border-radius:6px;padding:6px 8px;
+  }
+  .jump-dropdown .toggle{
+    color:#2A241E;padding:11px 12px;border-radius:6px;
+  }
+  .jump-dropdown .toggle:hover{background:#F0E9D6;}
+  .jump-dropdown input[type=checkbox]{
+    width:18px;height:18px;accent-color:#3A5F4E;cursor:pointer;flex-shrink:0;
+  }
 
   .quick-section-bar{
     display:flex;gap:8px;padding:10px 32px;overflow-x:auto;background:var(--paper);
@@ -455,7 +468,7 @@
     </div>
   </section>
 
-  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-21-m (fixed follower wrap - chordrow override))</span></footer>
+  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-21-q (popup: light color + fixed checkbox tap target))</span></footer>
 </div>
 <div id="customContextMenu" hidden></div>
 <div id="dropdownBackdrop" class="dropdown-backdrop" hidden></div>
@@ -524,7 +537,7 @@
   <div id="followScrollContainer" style="flex:1;min-height:0;overflow-y:auto;overflow-x:auto;padding:36px 24px 60vh;">
     <div id="followSongContent" style="font-family:'IBM Plex Mono',monospace;font-size:20px;line-height:2.05;white-space:pre;width:max-content;min-width:100%;"></div>
   </div>
-  <div style="position:fixed;bottom:4px;right:8px;font-size:10px;color:var(--ink-soft);opacity:.55;pointer-events:none;">build 2026-07-21-m</div>
+  <div style="position:fixed;bottom:4px;right:8px;font-size:10px;color:var(--ink-soft);opacity:.55;pointer-events:none;">build 2026-07-21-q</div>
 </section>
 
 <!-- Live sync: Firebase Realtime Database + client-side QR code generation -->
@@ -1023,10 +1036,14 @@
   let followDisplayMode = 'above';
 
   function applyFollowFontSize(){
-    // PREVIEW: follower content always wraps now (see renderSong override
-    // below), so shrink-to-fit isn't needed — wrapping already prevents
-    // overflow, so we just apply the chosen size directly.
-    document.getElementById('followSongContent').style.fontSize = followFontSize + 'px';
+    if(followDisplayMode === 'above'){
+      // Chords Above can't wrap without breaking chord/lyric alignment, so
+      // long lines are handled by shrinking to fit instead — the same
+      // mechanism already proven reliable on the host's own screen.
+      fitTextToWidth('followSongContent', 'followScrollContainer', followFontSize, 12);
+    } else {
+      document.getElementById('followSongContent').style.fontSize = followFontSize + 'px';
+    }
   }
   document.getElementById('followFontUp').addEventListener('click', () => {
     followFontSize = Math.min(followFontSize + 2, 40);
@@ -1063,21 +1080,11 @@
         followRenderKey = key;
         songFont = state.songFont || 'inter';
         const parsed = parseSong(state.text, state.format);
+        // Reverted: always show Chords Above, matching the host — no more
+        // switching to Inline behind your back. Long lines are handled by
+        // shrink-to-fit below instead (same proven mechanism already used
+        // on your own screen), not by changing the display style.
         renderSong(parsed, state.semitones, state.preferFlats, state.displayMode, 'followSongContent');
-        // PREVIEW: force wrapping regardless of chord display mode — trades
-        // exact chord-above column alignment on long lines for guaranteed
-        // no-side-scroll readability. Only overrides the follower's own
-        // screen; the host and its own alignment are untouched.
-        const followEl = document.getElementById('followSongContent');
-        followEl.style.whiteSpace = 'pre-wrap';
-        followEl.style.width = '100%';
-        followEl.style.minWidth = '';
-        // The chordrow/lyricrow elements inside each line have their own
-        // explicit white-space:pre, which silently overrides the setting
-        // above unless also overridden here directly.
-        followEl.querySelectorAll('.chordrow, .lyricrow').forEach((el) => {
-          el.style.whiteSpace = 'pre-wrap';
-        });
         // Font size is intentionally NOT taken from the host here — each
         // viewer controls their own size independently via A−/A+.
         applyFollowFontSize();
