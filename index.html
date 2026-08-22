@@ -85,6 +85,11 @@
   .dropdown-backdrop{
     position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:190;
   }
+  .install-banner{
+    display:flex;align-items:center;gap:10px;padding:10px 32px;background:var(--chord-bg);
+    border-bottom:1px solid var(--chord);font-size:13px;font-weight:600;color:var(--chord);flex-shrink:0;
+  }
+  @media (max-width:640px){ .install-banner{padding:10px 14px;} }
   .jump-dropdown button{
     display:block;width:100%;text-align:left;padding:9px 12px;border:none;background:transparent;
     border-radius:6px;font-weight:700;font-size:13px;color:var(--ink);letter-spacing:0.02em;
@@ -264,6 +269,12 @@
 
   <!-- LIBRARY -->
   <section id="libraryPanel" class="view">
+    <div id="installBanner" class="install-banner" hidden>
+      <span id="installBannerText"></span>
+      <div class="spacer"></div>
+      <button class="small primary" id="installBannerBtn" hidden>Install</button>
+      <button class="small ghost" id="installBannerDismiss">✕</button>
+    </div>
     <div class="row top-toolbar">
       <input type="text" id="searchBox" placeholder="Search your songs..." style="max-width:280px;">
       <span id="syncStatusLabel" style="font-size:11.5px;font-weight:600;"></span>
@@ -444,7 +455,7 @@
     </div>
   </section>
 
-  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-21-k (fixed G2/A5/C4 power-chord shorthand))</span></footer>
+  <footer>Built for hands-free reading — tap Play, adjust the speed, and follow along. <span style="opacity:.6;">(build 2026-07-21-l (Add to Home Screen prompt))</span></footer>
 </div>
 <div id="customContextMenu" hidden></div>
 <div id="dropdownBackdrop" class="dropdown-backdrop" hidden></div>
@@ -490,6 +501,12 @@
 
 <!-- FOLLOWER VIEW (opened via ?join=CODE) -->
 <section id="followPanel" hidden style="position:fixed;inset:0;background:var(--card);flex-direction:column;">
+  <div id="followInstallBanner" class="install-banner" hidden>
+    <span id="followInstallBannerText"></span>
+    <div class="spacer"></div>
+    <button class="small primary" id="followInstallBannerBtn" hidden>Install</button>
+    <button class="small ghost" id="followInstallBannerDismiss">✕</button>
+  </div>
   <div class="toolbar" style="justify-content:space-between;">
     <div class="toolgroup"><span class="live-dot"></span><strong style="margin-left:6px;">LIVE</strong></div>
     <div id="followTitle" class="song-title-bar" style="border:none;padding:0;background:transparent;flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-family:'Fraunces',serif;font-style:italic;font-weight:700;font-size:18px;color:var(--ink);"></div>
@@ -507,7 +524,7 @@
   <div id="followScrollContainer" style="flex:1;min-height:0;overflow-y:auto;overflow-x:auto;padding:36px 24px 60vh;">
     <div id="followSongContent" style="font-family:'IBM Plex Mono',monospace;font-size:20px;line-height:2.05;white-space:pre;width:max-content;min-width:100%;"></div>
   </div>
-  <div style="position:fixed;bottom:4px;right:8px;font-size:10px;color:var(--ink-soft);opacity:.55;pointer-events:none;">build 2026-07-21-k</div>
+  <div style="position:fixed;bottom:4px;right:8px;font-size:10px;color:var(--ink-soft);opacity:.55;pointer-events:none;">build 2026-07-21-l</div>
 </section>
 
 <!-- Live sync: Firebase Realtime Database + client-side QR code generation -->
@@ -2086,6 +2103,62 @@ Was blind but now I see`;
   document.getElementById('themeToggleHeader').addEventListener('click', toggleTheme);
   document.getElementById('followThemeToggle').addEventListener('click', toggleTheme);
   applyTheme(getPreferredTheme());
+
+  // ---------- Add to Home Screen prompt ----------
+  // Android/Chrome-based browsers fire beforeinstallprompt and let us
+  // trigger the native install dialog with one tap. iOS Safari has no such
+  // API at all — installing there is always a manual Share > Add to Home
+  // Screen, so we just show clear instructions instead.
+  let deferredInstallPrompt = null;
+  const isStandaloneApp = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  const isIOSDevice = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  function installBannerDismissed(){
+    try{ return localStorage.getItem('installBannerDismissed') === '1'; }catch(err){ return false; }
+  }
+  function showInstallBanner(kind){
+    if(isStandaloneApp || installBannerDismissed()) return;
+    const targets = [
+      {banner: 'installBanner', text: 'installBannerText', btn: 'installBannerBtn'},
+      {banner: 'followInstallBanner', text: 'followInstallBannerText', btn: 'followInstallBannerBtn'}
+    ];
+    targets.forEach(({banner, text, btn}) => {
+      const bannerEl = document.getElementById(banner);
+      const textEl = document.getElementById(text);
+      const btnEl = document.getElementById(btn);
+      if(!bannerEl) return;
+      if(kind === 'android'){
+        textEl.textContent = '📲 Install this app on your phone for quick, full-screen access.';
+        btnEl.hidden = false;
+      } else {
+        textEl.textContent = '📲 On iPhone/iPad: tap the Share icon, then "Add to Home Screen".';
+        btnEl.hidden = true;
+      }
+      bannerEl.hidden = false;
+    });
+  }
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    showInstallBanner('android');
+  });
+  async function handleInstallClick(){
+    if(!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    document.getElementById('installBanner').hidden = true;
+    document.getElementById('followInstallBanner').hidden = true;
+  }
+  function dismissInstallBanners(){
+    document.getElementById('installBanner').hidden = true;
+    document.getElementById('followInstallBanner').hidden = true;
+    try{ localStorage.setItem('installBannerDismissed', '1'); }catch(err){}
+  }
+  document.getElementById('installBannerBtn').addEventListener('click', handleInstallClick);
+  document.getElementById('followInstallBannerBtn').addEventListener('click', handleInstallClick);
+  document.getElementById('installBannerDismiss').addEventListener('click', dismissInstallBanners);
+  document.getElementById('followInstallBannerDismiss').addEventListener('click', dismissInstallBanners);
+  if(isIOSDevice) showInstallBanner('ios');
 
   // ---------- Init ----------
   if('serviceWorker' in navigator){
